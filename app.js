@@ -79,19 +79,83 @@ const BRAND = [
   ['fokus', 'Fokus saat ini (ganti tiap minggu / kampanye)', 'Misal: minggu ini fokus promo kelas, naikkan porsi BOFU', 1]
 ];
 
+
+/* ---------- galeri gaya visual (resep 3D dipakai juga sebagai arahan visual non-3D) ---------- */
+const STYLES = [
+  { name: 'Low-poly pastel', emoji: '🧊', mood: 'lembut, ramah, seperti mainan', palette: ['#FFD6A5', '#CAFFBF', '#9BF6FF', '#FDFFB6'], three: 'geometri sedikit sisi dengan flatShading, MeshStandardMaterial, satu DirectionalLight hangat + HemisphereLight, bayangan lembut, kamera orbit pelan', cocok: 'tutorial pemula, intro channel, produk lucu' },
+  { name: 'Neon cyberpunk', emoji: '🌃', mood: 'gelap, futuristik, energik', palette: ['#0B0F1A', '#FF2E97', '#00E5FF', '#7C4DFF'], three: 'material emissive + UnrealBloomPass, lantai reflektif, fog gelap, garis grid, kamera dolly cepat', cocok: 'teknologi, AI, demo yang bikin "wow"' },
+  { name: 'Glassmorphism', emoji: '🫧', mood: 'bersih, premium, modern', palette: ['#E8EEFF', '#B8C7FF', '#FFFFFF', '#FF9ECF'], three: 'MeshPhysicalMaterial dengan transmission dan roughness rendah, bentuk membulat melayang, background gradien lembut, environment map', cocok: 'produktivitas, SaaS, tips UI/UX' },
+  { name: 'Isometric mini-room', emoji: '🏠', mood: 'rapi, hangat, penuh detail kecil', palette: ['#FFE8D6', '#B7B7A4', '#6B705C', '#FFB4A2'], three: 'OrthographicCamera sudut isometrik, objek kecil dalam kubus ruangan, soft shadow, animasi loop kecil', cocok: 'storytelling, rutinitas harian, workspace' },
+  { name: 'Wireframe blueprint', emoji: '📐', mood: 'teknis, jujur, edukatif', palette: ['#0D3B66', '#FAF0CA', '#F4D35E', '#EE964B'], three: 'EdgesGeometry / LineSegments putih di background biru, grid tipis, label teks kecil, animasi garis "digambar"', cocok: 'menjelaskan cara kerja, behind the code' },
+  { name: 'Particle galaxy', emoji: '🌌', mood: 'megah, misterius', palette: ['#05010F', '#5B2A86', '#7AE7C7', '#F8F9FA'], three: 'THREE.Points dengan additive blending, noise di vertex shader, kamera orbit lambat, depth fog', cocok: 'intro dramatis, konsep AI, visualisasi data' },
+  { name: 'Clay / toy 3D', emoji: '🧸', mood: 'lucu, empuk, hangat', palette: ['#FFB5A7', '#FCD5CE', '#F8EDEB', '#A2D2FF'], three: 'bentuk membulat (RoundedBox, Sphere), MeshStandardMaterial roughness tinggi, easing elastis, soft shadow', cocok: 'edukasi ringan, maskot, audiens pemula' },
+  { name: 'Voxel / pixel 3D', emoji: '👾', mood: 'retro game, playful', palette: ['#2B2D42', '#8D99AE', '#EF233C', '#FFD166'], three: 'InstancedMesh kubus, palet terbatas, kamera orthographic, animasi membangun blok demi blok', cocok: 'gaming, progres, "bangun dari nol"' },
+  { name: 'Holographic iridescent', emoji: '🔮', mood: 'futuristik, mengilap', palette: ['#0A0A1F', '#C77DFF', '#48CAE4', '#FFD6FF'], three: 'ShaderMaterial fresnel dengan gradien pelangi, background gelap, rotasi pelan, rim light', cocok: 'teaser, peluncuran, produk digital' },
+  { name: 'Product turntable studio', emoji: '📦', mood: 'bersih, tepercaya, fokus produk', palette: ['#F5F5F5', '#E0E0E0', '#222222', '#FF6B35'], three: 'latar putih polos (cyclorama), softbox via RectAreaLight, lantai reflektif tipis, rotasi 360 derajat pelan, depth of field', cocok: 'affiliate, review produk, katalog' },
+  { name: 'Synthwave sunset', emoji: '🌅', mood: 'retro 80an, nostalgia', palette: ['#2D00F7', '#F20089', '#FF8C42', '#FFD60A'], three: 'matahari gradien (ShaderMaterial), grid horizon bergerak, gunung low-poly, fog ungu-pink', cocok: 'motivasi, musik, intro nostalgia' },
+  { name: 'Paper-cut layers', emoji: '✂️', mood: 'hangat, berdimensi, handmade', palette: ['#FDF0D5', '#C6D8D3', '#D81E5B', '#3A3335'], three: 'bidang datar bertumpuk di kedalaman Z berbeda, bayangan antar layer, parallax kamera geser', cocok: 'cerita, kutipan, carousel storytelling' },
+  { name: 'Toon / cel shading', emoji: '🎌', mood: 'komik, ekspresif', palette: ['#FFFFFF', '#FF595E', '#1982C4', '#FFCA3A'], three: 'MeshToonMaterial dengan gradientMap 3 tingkat + outline (inverted hull), warna solid cerah', cocok: 'karakter, humor, penjelasan playful' }
+];
+const GAYA0 = 'Bebas (AI pilih)';
+const gayaOpts = () => [GAYA0, ...STYLES.map(s => s.name)];
+const styleOf = n => STYLES.find(s => s.name === n);
+
+/* ---------- template jenis akun ---------- */
+const ACCT_TYPES = {
+  umum: { label: 'Umum (kosong)', emoji: '🌸', brand: {} },
+  affiliate: {
+    label: 'Affiliate (Shopee dll)', emoji: '🛍️', brand: {
+      niche: 'Review jujur & rekomendasi produk (affiliate Shopee) yang berguna di kehidupan sehari-hari',
+      audiens: 'Pembeli online yang ingin belanja hemat dan tidak mau salah beli',
+      masalah: 'Takut salah beli, bingung banyak pilihan, ragu kualitas dan harga',
+      impian: 'Dapat barang bagus dengan harga masuk akal tanpa kecewa',
+      beda: 'Review apa adanya: kelebihan dan kekurangan sama-sama disebut',
+      gaya: 'Santai, jujur, to the point, pakai aku-kamu',
+      nilai: 'Transparan soal link affiliate, tidak melebih-lebihkan produk',
+      pilar1: 'Review jujur (plus dan minus)', pilar2: 'Haul / racun belanja', pilar3: 'Perbandingan produk', pilar4: 'Tips pakai & hasil nyata', pilar5: 'Promo & flash sale (BOFU)',
+      produk: 'Produk affiliate (isi kategori produkmu)', cta: 'Cek link di bio / keranjang kuning', ctakey: 'Link di bio',
+      hindari: 'Klaim berlebihan, janji khasiat, diskon atau spesifikasi yang belum dicek', platformUtama: 'TikTok & Instagram, lalu Threads'
+    }
+  },
+  tech3d: {
+    label: 'Kreator Kode 3D (AI agent + Three.js)', emoji: '🧊', brand: {
+      niche: 'Bikin video & animasi 3D pakai AI agent + kode (Three.js): dari prompt sampai jadi video',
+      audiens: 'Kreator dan developer pemula yang penasaran bikin visual 3D tanpa software 3D yang berat',
+      masalah: 'Takut koding, bingung mulai, hasil AI terlihat generik, tidak tahu cara mengubah kode jadi video',
+      impian: 'Punya video 3D keren yang terlihat profesional dan bisa dibuat berulang dengan cepat',
+      beda: 'Menunjukkan proses nyata: prompt ke agent, hasil kode, sampai render video, termasuk saat gagal',
+      gaya: 'Santai, visual dulu baru penjelasan, istilah teknis dijelaskan dengan analogi sederhana',
+      nilai: 'Jujur soal hasil dan batasan AI; tunjukkan prosesnya, bukan cuma hasil akhir',
+      pilar1: 'Demo hasil (dari prompt jadi visual 3D)', pilar2: 'Tutorial prompt untuk agent koding', pilar3: 'Perbandingan gaya visual (low-poly, neon, glass, dll)', pilar4: 'Behind the code & troubleshooting', pilar5: 'Template / kelas / jasa (BOFU)',
+      cta: 'Komen "3D" untuk dapat prompt-nya', ctakey: 'Komen 3D / link di bio',
+      hindari: 'Jargon tanpa penjelasan, janji "jadi pro dalam sehari"', platformUtama: 'TikTok & Instagram Reels, lalu YouTube Shorts'
+    }
+  }
+};
+
 /* ---------- state ---------- */
 const KEY = 'creatorkit.fanyafriliaa.v1';
-const defaults = () => ({
-  brand: {}, tools: {}, data: [], done: {},
-  cal: { rows: [] },
-  settings: { key: '', model: 'otomatis', mode: 'Cepat' }
-});
-let S = (() => {
-  try { const r = JSON.parse(localStorage.getItem(KEY) || 'null'); return Object.assign(defaults(), r || {}); }
-  catch { return defaults(); }
-})();
-S.settings = Object.assign({ key: '', model: 'otomatis', mode: 'Cepat' }, S.settings);
-S.cal = Object.assign({ rows: [] }, S.cal);
+const newAcct = (name = 'Akun 1', emoji = '🌸', handle = '', type = 'umum') => ({ id: uid(), name, emoji, handle, type, brand: {}, tools: {}, data: [], done: {}, cal: { rows: [] } });
+function normalize(raw) {
+  const st = { settings: Object.assign({ key: '', model: 'otomatis', mode: 'Cepat' }, raw && raw.settings), accounts: [], cur: '' };
+  if (raw && Array.isArray(raw.accounts) && raw.accounts.length) {
+    st.accounts = raw.accounts.map(a => Object.assign(newAcct(), a, { cal: Object.assign({ rows: [] }, a.cal) }));
+    st.cur = raw.cur;
+  } else { // data lama (satu akun) dipindah jadi Akun 1
+    const a = newAcct('Akun 1');
+    if (raw) { ['brand', 'tools', 'data', 'done'].forEach(k => { if (raw[k]) a[k] = raw[k]; }); if (raw.cal) a.cal = Object.assign({ rows: [] }, raw.cal); }
+    st.accounts = [a];
+  }
+  if (!st.accounts.some(a => a.id === st.cur)) st.cur = st.accounts[0].id;
+  return st;
+}
+const acct = () => S.accounts.find(a => a.id === S.cur) || S.accounts[0];
+function wrap(st) { // S.brand, S.data, dst. otomatis menunjuk ke akun yang sedang dipilih
+  ['brand', 'tools', 'data', 'done', 'cal'].forEach(k => Object.defineProperty(st, k, { get() { return acct()[k]; }, set(v) { acct()[k] = v; }, enumerable: false, configurable: true }));
+  return st;
+}
+let S;
+try { S = wrap(normalize(JSON.parse(localStorage.getItem(KEY) || 'null'))); } catch { S = wrap(normalize(null)); }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* storage penuh/diblokir */ } };
 
 function setPath(path, val) {
@@ -116,6 +180,13 @@ const PRE = () => `Kamu strategis konten media sosial berpengalaman untuk kreato
 PROFIL BRAND SAYA:
 ${brandCtx()}
 ${memory()}`;
+function gayaLine(i) {
+  const st = styleOf(i.gaya);
+  return st ? `- Gaya visual: ${st.name} (${st.mood}). Palet: ${st.palette.join(', ')}. Resep 3D: ${st.three}` : '- Gaya visual: bebas, pilihkan yang paling cocok dengan brand dan topik';
+}
+const extraLine = i => i.extra && i.extra.trim() ? `\nINSTRUKSI TAMBAHAN DARI SAYA (prioritaskan): ${i.extra.trim()}\n` : '';
+const EXTRA = { k: 'extra', l: 'Instruksi tambahan (prompt bebas dari kamu)', t: 'area', ph: 'Misal: pakai gaya bercerita, jangan sebut harga, tampilkan hasil sebelum penjelasan...', wide: 1 };
+const GAYA = { k: 'gaya', l: 'Gaya visual', t: 'select', o: gayaOpts() };
 const orBrand = (v, k) => (v && String(v).trim()) || (S.brand[k] || '') || '(belum diisi)';
 
 /* ---------- definisi tool ---------- */
@@ -192,9 +263,11 @@ Keluarkan:
       { k: 'format', l: 'Format', t: 'select', o: L.format },
       { k: 'funnel', l: 'Funnel', t: 'select', o: L.funnel },
       { k: 'jumlah', l: 'Jumlah Ide', t: 'num', def: 5, min: 1, max: 15 },
+      GAYA,
       { k: 'pilar', l: 'Pilar / Topik', t: 'pilar', ph: 'Pilih pilar atau ketik topik', wide: 1 },
       { k: 'masalah', l: 'Masalah Audiens yang Disasar', t: 'text', ph: 'Misal: merasa tidak ada waktu sama sekali', wide: 1 },
-      { k: 'catatan', l: 'Catatan Tambahan', t: 'area', wide: 1 }
+      { k: 'catatan', l: 'Catatan Tambahan', t: 'area', wide: 1 },
+      EXTRA
     ],
     modes: [{
       id: 'main', label: 'Ide', btn: '✨ Generate Ide', prompt: i => `${PRE()}
@@ -203,8 +276,8 @@ TUGAS: IDE KONTEN siap produksi
 - Pilar / topik: ${i.pilar || '(pilih dari pilar brand)'}
 - Masalah audiens yang disasar: ${i.masalah || '(pilih dari Profil Brand)'}
 - Catatan: ${i.catatan || '-'}
-
-Buat ${i.jumlah} ide. Tiap ide berisi: nomor, judul konten, hook 1 kalimat, garis besar isi (3-5 poin), CTA yang cocok untuk funnel ${i.funnel}, alasan ide ini bisa jalan, tingkat usaha produksi (mudah/sedang/susah).
+${gayaLine(i)}${extraLine(i)}
+Buat ${i.jumlah} ide. Tiap ide berisi: nomor, judul konten, hook 1 kalimat, garis besar isi (3-5 poin), SARAN VISUAL singkat (apa yang tampil di layar/foto, gaya, warna), CTA yang cocok untuk funnel ${i.funnel}, alasan ide ini bisa jalan, tingkat usaha produksi (mudah/sedang/susah).
 Akhiri dengan REKOMENDASI 1 ide terbaik dan alasannya.`
     }],
     next: [{ to: 'hook', field: 'topik', label: 'Hook' }, { to: 'studio', field: 'judul', label: 'Studio Konten' }]
@@ -218,7 +291,8 @@ Akhiri dengan REKOMENDASI 1 ide terbaik dan alasannya.`
       { k: 'jenis', l: 'Jenis Hook', t: 'select', o: L.hook, def: 'Campur semua' },
       { k: 'emosi', l: 'Emosi yang Dituju', t: 'select', o: L.emosi },
       { k: 'jumlah', l: 'Jumlah', t: 'num', def: 10, min: 3, max: 30 },
-      { k: 'catatan', l: 'Catatan', t: 'text', ph: 'Opsional' }
+      { k: 'catatan', l: 'Catatan', t: 'text', ph: 'Opsional' },
+      EXTRA
     ],
     modes: [{
       id: 'main', label: 'Hook', btn: '✨ Generate Hook', prompt: i => {
@@ -228,7 +302,7 @@ TUGAS: HOOK pembuka (3 detik pertama / baris pertama)
 - Topik / ide: ${i.topik || '(belum diisi)'}
 - Platform: ${i.platform} | Jenis hook: ${i.jenis} | Emosi yang dituju: ${i.emosi}
 - Catatan: ${i.catatan || '-'}
-
+${extraLine(i)}
 Rumus referensi (boleh dimodifikasi, jangan ditiru mentah):
 ${refs}
 
@@ -247,9 +321,11 @@ Akhiri dengan 3 HOOK TERBAIK beserta alasan singkat kenapa bikin orang berhenti 
       { k: 'format', l: 'Format', t: 'select', o: L.format },
       { k: 'funnel', l: 'Funnel', t: 'select', o: L.funnel },
       { k: 'durasi', l: 'Durasi (detik) / Jumlah Slide', t: 'text', ph: '30 atau 8 slide' },
+      GAYA,
       { k: 'hook', l: 'Hook Pilihan', t: 'text', wide: 1 },
       { k: 'poin', l: 'Poin Penting / Catatan', t: 'area', wide: 1 },
-      { k: 'cta', l: 'CTA', t: 'text', ph: 'Kosong = pakai CTA utama Profil Brand', wide: 1 }
+      { k: 'cta', l: 'CTA', t: 'text', ph: 'Kosong = pakai CTA utama Profil Brand', wide: 1 },
+      EXTRA
     ],
     modes: [
       {
@@ -267,7 +343,7 @@ TUGAS: ISI KONTEN siap produksi
 - Hook pilihan: ${i.hook || '(buatkan hook terbaik)'}
 - Poin penting / catatan: ${i.poin || '-'}
 - CTA: ${orBrand(i.cta, 'cta')}
-
+${gayaLine(i)}${extraLine(i)}
 Tulis ${bentuk}
 Pakai gaya bahasa dari Profil Brand dan hindari hal yang saya larang.`;
         }
@@ -280,8 +356,42 @@ TUGAS: CAPTION & HASHTAG
 - Hook pilihan: ${i.hook || '-'}
 - Poin penting: ${i.poin || '-'}
 - CTA: ${orBrand(i.cta, 'cta')}
-
+${extraLine(i)}
 Buat 2 versi caption (pendek dan panjang) sesuai kebiasaan ${i.platform}, baris pertama harus kuat. Tambahkan 6-10 hashtag relevan (campur besar dan niche) dan 1 saran komentar pertama untuk memancing diskusi.`
+      },
+      {
+        id: 'visual', label: 'Saran Visual', btn: '✨ Saran Visual', prompt: i => {
+          const f = i.format;
+          const arah = /Reels|Video|Live/.test(f) ? `SHOT LIST per adegan: waktu (detik), jenis shot (close-up/wide/POV/screen record), gerakan kamera, apa yang tampil, transisi, teks layar (gaya huruf & posisi), B-roll yang perlu disiapkan. Tambahkan saran musik/efek suara (mood saja), ide cover/thumbnail, dan kesalahan visual yang perlu dihindari.`
+            : /Carousel/.test(f) ? `DESAIN PER SLIDE: tata letak (di mana judul, isi, visual), hirarki ukuran huruf, warna latar & teks (kode hex), ikon/ilustrasi yang cocok, konsistensi antar slide, desain slide cover yang bikin berhenti scroll, dan desain slide CTA. Beri pasangan font yang disarankan.`
+              : /Foto|Single|Story/.test(f) ? `ARAHAN FOTO/GAMBAR: komposisi, sudut pengambilan, pencahayaan, properti, latar belakang, warna dominan (kode hex), teks di gambar (jika ada), dan cara mengeditnya agar rapi. Beri 2 alternatif konsep.`
+                : `ARAHAN VISUAL: tampilan yang mendukung isi konten dan cara menyajikannya.`;
+          return `${PRE()}
+TUGAS: SARAN VISUAL
+- Judul / ide: ${i.judul || '(belum diisi)'}
+- Platform: ${i.platform} | Format: ${f} | Funnel: ${i.funnel}
+- Hook pilihan: ${i.hook || '-'}
+- Poin penting: ${i.poin || '-'}
+${gayaLine(i)}${extraLine(i)}
+Tulis ${arah}
+Semua saran harus bisa dikerjakan pakai HP / alat sederhana kecuali saya minta lain. Jelaskan singkat kenapa tiap pilihan visual mendukung hook.`;
+        }
+      },
+      {
+        id: 'aset', label: 'Prompt Aset', btn: '✨ Prompt Aset', prompt: i => {
+          const st = styleOf(i.gaya), three = !!st || acct().type === 'tech3d';
+          return `${PRE()}
+TUGAS: PAKET PROMPT ASET (siap tempel ke alat lain)
+- Judul / ide: ${i.judul || '(belum diisi)'}
+- Platform: ${i.platform} | Format: ${i.format} | Durasi/slide: ${i.durasi || '-'}
+- Hook: ${i.hook || '-'}
+${gayaLine(i)}${extraLine(i)}
+Buat bagian berikut. Tiap bagian ditulis sebagai blok yang bisa langsung disalin:
+${three ? `A. PROMPT UNTUK AGENT KODING (Claude Code / Cursor / sejenis): minta dibuatkan animasi 3D dengan Three.js dalam satu file HTML. Isi: tujuan scene, objek & geometri, material, pencahayaan, gerakan kamera per detik, timeline animasi, durasi, rasio 9:16 (1080x1920), 30 fps, loop mulus. Animasi harus berbasis waktu (bukan jumlah frame) supaya bisa dirender dengan hasil yang sama. Parameter penting (warna, durasi, teks) ditaruh di bagian atas file. Sertakan cara mengubahnya jadi video: render frame demi frame lalu gabung dengan ffmpeg, atau rekam layar. Tutup dengan kriteria "selesai".\n` : 'A. (dilewati, konten ini tidak memakai animasi 3D dari kode)\n'}B. PROMPT GAMBAR untuk cover / thumbnail / foto pendukung, bahasa Inggris: subjek, gaya, komposisi, pencahayaan, palet warna, rasio, dan hal yang harus dihindari. Beri 2 variasi.
+C. PROMPT VIDEO AI per adegan (bahasa Inggris, klip 3-5 detik), hanya untuk adegan yang sulit direkam sendiri.
+D. DAFTAR ASET yang perlu disiapkan (rekaman, foto, musik/SFX mood, font, ikon).
+Jangan menyebut fitur alat yang tidak kamu yakini ada. Kalau ragu, tulis "cek di alatnya".`;
+        }
       }
     ],
     next: []
@@ -309,6 +419,48 @@ Tanggal | Hari ke | Platform | Format | Funnel | Pilar | Ide Konten | Hook | CTA
 Pakai tanggal format DD/MM/YYYY. Variasikan format dan pilar, patuhi rasio funnel, taruh konten BOFU saat masa promo.`
     }],
     next: [], after: 'cal'
+  },
+  affiliate: {
+    emoji: '🛍️', title: 'Konten Affiliate', stage: 'Bikin Konten',
+    desc: 'Untuk akun affiliate (Shopee, TikTok Shop, dll). Masukkan link & detail produk, dapat banyak ide konten + saran visual (video atau foto) + CTA + caption. Web ini tidak membuka link-nya, jadi isi detail produk sendiri supaya AI tidak mengarang.',
+    fields: [
+      { k: 'produk', l: 'Nama Produk', t: 'text', ph: 'Misal: Tumbler 1 liter anti bocor', wide: 1 },
+      { k: 'link', l: 'Link Affiliate', t: 'text', ph: 'https://s.shopee.co.id/...', wide: 1 },
+      { k: 'marketplace', l: 'Marketplace', t: 'select', o: ['Shopee', 'TikTok Shop', 'Tokopedia', 'Lazada', 'Lainnya'] },
+      { k: 'harga', l: 'Harga (opsional)', t: 'text', ph: 'Rp 89.000' },
+      { k: 'fitur', l: 'Fitur / keunggulan / spesifikasi', t: 'area', ph: 'Salin dari halaman produk atau dari barang yang kamu pegang', wide: 1 },
+      { k: 'untuk', l: 'Cocok untuk siapa', t: 'text', ph: 'Anak kos, pekerja kantoran, ibu baru...', wide: 1 },
+      { k: 'bukti', l: 'Pengalaman / ulasan asli yang kamu punya (opsional)', t: 'area', ph: 'Cerita pemakaian nyata, kekurangan yang kamu temukan, ulasan pembeli yang bisa dipercaya', wide: 1 },
+      { k: 'hasil', l: 'Bentuk konten', t: 'select', o: ['Campur video & foto', 'Video pendek', 'Foto / carousel'] },
+      { k: 'platform', l: 'Platform', t: 'select', o: L.platform },
+      { k: 'jumlah', l: 'Jumlah Ide', t: 'num', def: 10, min: 3, max: 30 },
+      GAYA, EXTRA
+    ],
+    modes: [{
+      id: 'main', label: 'Ide Affiliate', btn: '✨ Buat Ide Affiliate', prompt: i => `${PRE()}
+TUGAS: IDE KONTEN AFFILIATE
+- Produk: ${i.produk || '(belum diisi)'} (${i.marketplace}) | Harga: ${i.harga || 'tidak disebut'}
+- Link affiliate (hanya untuk penempatan CTA, jangan menebak isi halaman dari link): ${i.link || '(belum diisi)'}
+- Fitur / spesifikasi dari saya: ${i.fitur || '(tidak ada)'}
+- Cocok untuk: ${i.untuk || '-'}
+- Pengalaman / ulasan asli dari saya: ${i.bukti || '(tidak ada)'}
+- Platform: ${i.platform} | Bentuk konten: ${i.hasil}
+${gayaLine(i)}${extraLine(i)}
+ATURAN KERAS:
+1. Pakai HANYA data yang saya berikan. Jangan mengarang spesifikasi, harga, diskon, stok, klaim khasiat/kesehatan, atau testimoni. Kalau data kurang, tulis placeholder [ISI: ...].
+2. Jangan berjanji hasil berlebihan. Sebut kekurangan produk bila saya memberikannya.
+3. Ingatkan cara memberi tahu audiens bahwa ini link affiliate (misal tulisan "#ad" atau "link affiliate") dan cara menaruh link yang umum di ${i.platform}. Anggap panduan ini umum dan minta saya mengecek aturan terbaru platform.
+
+Buat ${i.jumlah} ide dengan SUDUT yang berbeda-beda (review jujur, masalah-solusi, unboxing, sebelum-sesudah, perbandingan, haul/racun belanja, tips pakai, budget finds, mitos vs fakta, dll). Tiap ide berisi:
+- Nomor + judul + sudut + bentuk (video / foto / carousel)
+- Hook (maks 15 kata)
+- Isi / alur singkat
+- SARAN VISUAL: untuk video berupa shot list ringkas (adegan, sudut, teks layar); untuk foto/carousel berupa tata letak, properti, latar, dan warna
+- CTA dan cara menaruh link
+- Caption pendek + 5 hashtag
+Akhiri dengan 3 ide yang paling mudah dibuat hari ini dan saran urutan posting 1 minggu.`
+    }],
+    next: [{ to: 'studio', field: 'judul', label: 'Studio Konten' }]
   },
   analisa: {
     emoji: '🧠', title: 'Analisa AI Akun', stage: 'Perbaiki',
@@ -391,8 +543,8 @@ async function runTool(id, mode) {
 }
 
 /* ---------- hitung data konten ---------- */
-function computed() {
-  const d = S.data.map(r => {
+function computed(src = S.data) {
+  const d = src.map(r => {
     const views = num(r.views), inter = num(r.likes) + num(r.komen) + num(r.share) + num(r.save);
     const pct = v => views ? v / views * 100 : 0;
     const h = parseInt((r.jam || '').slice(0, 2), 10);
@@ -468,19 +620,19 @@ function download(name, text, type = 'text/plain') {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type + ';charset=utf-8' })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 const csv = rows => rows.map(r => r.map(c => '"' + String(c ?? '').replace(/"/g, '""') + '"').join(',')).join('\n');
-const head = (t, p, e = '') => `<div class="page-head"><h1>${e} <span class="hl">${esc(t)}</span></h1><p>${p}</p></div>`;
+const head = (t, p, e = '') => `<div class="page-head"><h1>${e} <span class="hl">${esc(t)}</span></h1><p>${p}</p><p style="margin-top:8px"><a href="#/akun" class="tag" style="text-decoration:none" title="Ganti akun">${acct().emoji} ${esc(acct().name)}</a></p></div>`;
 const opts = (arr, cur) => arr.map(o => `<option ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
 const pilarList = () => [1, 2, 3, 4, 5].map(i => S.brand['pilar' + i]).filter(Boolean);
 const funnelTag = f => `<span class="tag ${String(f).toLowerCase()}">${esc(f)}</span>`;
 
 /* ---------- navigasi ---------- */
 const NAV = [
-  ['Mulai', [['home', '🏠', 'Panduan'], ['settings', '⚙️', 'Pengaturan'], ['brand', '🧠', 'Profil Brand']]],
+  ['Mulai', [['home', '🏠', 'Panduan'], ['akun', '👥', 'Akun Saya'], ['settings', '⚙️', 'Pengaturan'], ['brand', '🧠', 'Profil Brand']]],
   ['Riset', [['riset', '🧭', 'Riset Topik'], ['bedah', '🔬', 'Bedah Viral']]],
-  ['Bikin Konten', [['ide', '💡', 'Ide Konten'], ['hook', '🎣', 'Hook'], ['studio', '🎬', 'Studio Konten'], ['kalender', '🗓️', 'Kalender']]],
+  ['Bikin Konten', [['ide', '💡', 'Ide Konten'], ['affiliate', '🛍️', 'Konten Affiliate'], ['hook', '🎣', 'Hook'], ['studio', '🎬', 'Studio Konten'], ['kalender', '🗓️', 'Kalender']]],
   ['Ukur', [['data', '📈', 'Data Konten'], ['dashboard', '📊', 'Dashboard']]],
   ['Perbaiki', [['analisa', '🧠', 'Analisa AI']]],
-  ['Contekan', [['funnel', '🎯', 'Panduan Funnel'], ['bank', '🗂️', 'Bank Hook']]]
+  ['Contekan', [['gaya', '🎨', 'Galeri Gaya'], ['funnel', '🎯', 'Panduan Funnel'], ['bank', '🗂️', 'Bank Hook']]]
 ];
 const STEPS = [
   ['Tahap 1 · Siapkan (sekali saja)', [['settings', 'Pengaturan', 'API Key + tes koneksi. Lewati kalau pakai cara manual 📋.'], ['brand', 'Profil Brand', 'Otak brand: audiens, masalah, gaya bahasa, 5 pilar, produk, CTA.']]],
@@ -494,6 +646,8 @@ const stepNo = (() => { let n = 0; const m = {}; STEPS.forEach(([, a]) => a.forE
 function renderNav(cur) {
   $('#side').innerHTML = NAV.map(([g, items]) => `<h4>${g}</h4>` + items.map(([id, e, l]) =>
     `<a href="#/${id}" class="${id === cur ? 'on' : ''}" ${id === cur ? 'aria-current="page"' : ''}><span>${e}</span>${l}${S.done[id] ? '<span class="ck">✅</span>' : ''}</a>`).join('')).join('');
+  const sel = $('#acctSel');
+  sel.innerHTML = S.accounts.map(a => `<option value="${a.id}" ${a.id === S.cur ? 'selected' : ''}>${a.emoji} ${esc(a.name)}</option>`).join('') + '<option value="__new">➕ Kelola / tambah akun...</option>';
   const manual = !S.settings.key;
   const p = $('#modePill'); p.textContent = manual ? '📋 Mode manual' : '✨ Mode otomatis'; p.className = 'mode-pill' + (manual ? ' manual' : '');
 }
@@ -508,6 +662,7 @@ function viewHome() {
     <p>Riset topik, bedah konten viral, ide, hook, script, caption & kalender dalam satu tempat. Bisa <b>OTOMATIS</b> (✨ pakai API Gemini gratis milikmu) atau <b>MANUAL</b> (📋 buat prompt, salin ke ChatGPT / Gemini / Claude).</p>
     <div class="row" style="margin-top:14px">
       <a class="btn pink" href="#/${filled < 5 ? 'brand' : 'riset'}">${filled < 5 ? '🧠 Mulai: isi Profil Brand' : '🧭 Lanjut: Riset Topik'}</a>
+      <a class="btn lilac" href="#/akun">👥 Kelola Akun (${S.accounts.length})</a>
       <a class="btn" href="#/settings">⚙️ Pengaturan</a>
     </div>
     <p class="small muted" style="margin-top:10px">by Fany Afrilia. Semua datamu tersimpan di browser ini saja.</p>
@@ -534,6 +689,60 @@ function viewHome() {
   <div class="card"><h2>🎨 Arti tanda</h2><div class="grid g2 small">
     <div>🌸 <b>Kolom pink</b>: tempat mengisi data</div><div>✨ <b>Tombol AI</b>: jalankan otomatis (perlu API Key)</div>
     <div>📋 <b>Buat prompt</b>: tanpa API, salin ke AI lalu tempel jawabannya</div><div>📝 <b>Kolom Hasil</b>: jawaban AI, bisa diedit & disimpan</div></div></div>`;
+}
+
+
+let acctForm = null; // null | 'new' | id akun yang diubah
+const EMOJIS = ['🌸', '🎀', '⭐', '🍓', '🌈', '🐱', '🎧', '📚', '☕', '🦋', '🍋', '🌙', '🍑', '🧸', '🎨', '🛍️'];
+const CARDBG = ['yellow', 'pink', 'mint', 'blue', 'lilac', 'orange'];
+function viewAkun() {
+  const rows = S.accounts.map(a => {
+    const d = computed(a.data), n = d.length;
+    return { a, n, avg: n ? d.reduce((s, x) => s + x.views, 0) / n : 0, sc: n ? d.reduce((s, x) => s + x.score, 0) / n : 0,
+      filled: BRAND.filter(([k]) => (a.brand[k] || '').trim()).length, last: a.data.map(x => x.tgl).filter(Boolean).sort().at(-1) };
+  });
+  const ed = acctForm && acctForm !== 'new' ? S.accounts.find(a => a.id === acctForm) : null;
+  return head('Akun Saya', 'Satu orang, banyak akun sosmed. Tiap akun punya Profil Brand, riset, ide, kalender, dan data konten sendiri, jadi hasil AI tidak tercampur.', '👥') + `
+  <div class="row" style="margin-bottom:16px"><button class="btn pink" data-act="acctnew">➕ Tambah akun</button><span class="small muted">${S.accounts.length} akun terdaftar, tanpa batas jumlah.</span></div>
+  ${acctForm ? `<form class="card" id="aform"><h2>${ed ? '✏️ Ubah akun' : '🌸 Akun baru'}</h2>
+    <div class="grid g2 pink-field">
+      <label class="f">Nama akun / brand ★<input name="name" type="text" required maxlength="40" value="${esc(ed?.name || '')}" placeholder="Misal: Toko Kue Fany"></label>
+      <label class="f">Username (opsional)<input name="handle" type="text" maxlength="40" value="${esc(ed?.handle || '')}" placeholder="@namaakun"></label>
+      ${ed ? '' : `<label class="f wide">Jenis akun<small>Template mengisi Profil Brand awal (bisa kamu ubah setelahnya)</small><select name="type">${Object.entries(ACCT_TYPES).map(([k, v]) => `<option value="${k}">${v.emoji} ${esc(v.label)}</option>`).join('')}</select></label>`}
+      <div class="f wide">Ikon<div class="chips">${EMOJIS.map((e, i) => `<label class="chip" style="font-size:20px"><input type="radio" name="emoji" value="${e}" hidden ${(ed ? ed.emoji === e : i === S.accounts.length % EMOJIS.length) ? 'checked' : ''}>${e}</label>`).join('')}</div></div>
+    </div>
+    <div class="row" style="margin-top:14px"><button class="btn mint" type="submit">💾 Simpan</button><button class="btn" type="button" data-act="acctcancel">Batal</button></div></form>` : ''}
+  <div class="grid gauto">${rows.map(({ a, n, filled, last }, i) => `
+    <div class="card" style="margin:0;background:${a.id === S.cur ? 'var(--' + CARDBG[i % 6] + ')' : 'var(--paper)'}">
+      <div class="row" style="flex-wrap:nowrap"><span style="font-size:34px">${a.emoji}</span>
+        <div style="min-width:0"><h3 style="margin:0;overflow:hidden;text-overflow:ellipsis">${esc(a.name)}</h3><div class="small muted">${esc(a.handle || 'tanpa username')} · ${esc((ACCT_TYPES[a.type] || ACCT_TYPES.umum).label)}</div></div>
+        ${a.id === S.cur ? '<span class="tag" style="margin-left:auto">aktif</span>' : ''}</div>
+      <p class="small" style="margin:10px 0">Brand ${filled}/${BRAND.length} · ${n} konten</p>
+      <div class="bar mint"><i style="width:${Math.round(filled / BRAND.length * 100)}%"></i></div>
+      <div class="row" style="margin-top:12px">
+        ${a.id === S.cur ? '' : `<button class="btn sm mint" data-act="acctpick" data-id="${a.id}">Pakai</button>`}
+        <button class="btn sm blue" data-act="acctedit" data-id="${a.id}">Ubah</button>
+        <button class="btn sm yellow" data-act="acctdup" data-id="${a.id}" title="Salin Profil Brand ke akun baru">Duplikat</button>
+        <button class="btn sm orange" data-act="acctdel" data-id="${a.id}" aria-label="Hapus akun">Hapus</button></div></div>`).join('')}</div>
+  <div class="card" style="margin-top:20px"><h2>📊 Perbandingan semua akun</h2>
+    <div class="tablewrap"><table><thead><tr><th>Akun</th><th class="n">Konten</th><th class="n">Rata views</th><th class="n">Rata skor</th><th>Posting terakhir</th></tr></thead><tbody>
+    ${rows.map(r => `<tr><td>${r.a.emoji} <b>${esc(r.a.name)}</b></td><td class="n">${r.n}</td><td class="n">${r.n ? fmt(r.avg) : '-'}</td><td class="n">${r.n ? Math.round(r.sc) : '-'}</td><td>${r.last ? dmy(r.last) : '-'}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
+}
+
+function viewGaya() {
+  return head('Galeri Gaya Visual', 'Pilih gaya lalu pakai di Studio atau Konten Affiliate. Tiap gaya punya palet warna dan resep Three.js yang bisa disalin ke agent koding. Untuk konten non-3D, palet dan mood-nya tetap bisa jadi arahan desain.', '🎨') + `
+  <div class="grid gauto">${STYLES.map((st, i) => `<div class="hookcard">
+    <div class="pv"><canvas class="pvc" width="480" height="300" data-style="${esc(st.name)}" data-palette="${st.palette.join(',')}" role="img" aria-label="Preview 3D gaya ${esc(st.name)}"></canvas>
+      <div class="pvbar"><button class="btn sm" data-act="pvplay">⏸ Jeda</button><button class="btn sm lilac" data-act="pvstage" data-i="${i}">📱 Mode rekam 9:16</button></div></div>
+    <div class="f1" style="font-size:18px">${st.emoji} ${esc(st.name)}</div>
+    <div class="row" style="gap:6px">${st.palette.map(c => `<span class="swatch" style="background:${c}" title="${c}"></span>`).join('')}<span class="small muted">${st.palette.join(' ')}</span></div>
+    <div class="small"><b>Mood:</b> ${esc(st.mood)}</div>
+    <div class="small"><b>Resep Three.js:</b> ${esc(st.three)}</div>
+    <div class="small"><b>Cocok untuk:</b> ${esc(st.cocok)}</div>
+    <div class="row"><button class="btn sm yellow" data-act="gayause" data-i="${i}">Pakai di Studio</button>
+    <button class="btn sm mint" data-act="gayaaff" data-i="${i}">Pakai di Affiliate</button>
+    <button class="btn sm" data-act="gayacopy" data-i="${i}">Salin resep</button></div></div>`).join('')}</div>`;
 }
 
 function viewSettings() {
@@ -595,8 +804,8 @@ function viewTool(id) {
   <datalist id="dl-pilar">${pilarList().map(p => `<option value="${esc(p)}">`).join('')}</datalist>
   <div class="card"><h2>🌸 Isi bahan</h2><div class="grid g2 pink-field">${D.fields.map(f => fieldHtml(id, f)).join('')}</div>
     <div class="row" style="margin-top:16px">
-      ${D.modes.map(m => `<button class="btn pink" data-act="run" data-t="${id}" data-m="${m.id}" ${busy[id + ':' + m.id] ? 'disabled' : ''}>${busy[id + ':' + m.id] ? '<span class="spin"></span> AI bekerja...' : m.btn}</button>
-      <button class="btn blue" data-act="prompt" data-t="${id}" data-m="${m.id}">📋 Buat prompt${D.modes.length > 1 ? ' ' + esc(m.label) : ''}</button>`).join('')}
+      ${D.modes.map(m => `<div class="modegrp"><button class="btn pink" data-act="run" data-t="${id}" data-m="${m.id}" ${busy[id + ':' + m.id] ? 'disabled' : ''}>${busy[id + ':' + m.id] ? '<span class="spin"></span> AI bekerja...' : m.btn}</button>
+      <button class="btn blue" data-act="prompt" data-t="${id}" data-m="${m.id}">📋 ${D.modes.length > 1 ? esc(m.label) : 'Buat prompt'}</button></div>`).join('')}
     </div>
     <p class="small muted" style="margin:10px 0 0">${S.settings.key ? 'Mode otomatis aktif. Tombol ✨ butuh 10-40 detik.' : 'Belum ada API Key: pakai tombol 📋, lalu salin prompt ke AI favoritmu.'}</p>
   </div>
@@ -760,13 +969,31 @@ function viewBank() {
 }
 
 const VIEWS = {
-  home: viewHome, settings: viewSettings, brand: viewBrand, dashboard: viewDashboard, data: viewData, funnel: viewFunnel, bank: viewBank
+  home: viewHome, akun: viewAkun, gaya: viewGaya, settings: viewSettings, brand: viewBrand, dashboard: viewDashboard, data: viewData, funnel: viewFunnel, bank: viewBank
 };
+let pvMod = null, stageStop = null;
+const stopPreviews = () => { try { pvMod && pvMod.stop(); } catch { /* abaikan */ } };
+async function initPreviews() {
+  const cs = [...document.querySelectorAll('.pvc')], reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  try {
+    pvMod = pvMod || await import('./preview3d.js');
+    if (route !== 'gaya' || !cs[0]?.isConnected) return;
+    if (!pvMod.mount(cs, reduced)) throw new Error('webgl');
+    if (reduced) document.querySelectorAll('[data-act=pvplay]').forEach(x => x.textContent = '▶ Putar');
+  } catch {
+    cs.forEach(c => { const d = document.createElement('div'); d.className = 'empty'; d.textContent = 'Preview 3D tidak bisa dimuat. Butuh WebGL, dan halaman harus dibuka lewat http(s) (hosting atau server lokal), bukan klik file langsung.'; c.closest('.pv')?.replaceWith(d); });
+  }
+}
+function closeStage() {
+  if (stageStop) { stageStop(); stageStop = null; }
+  $('#stage')?.remove(); if (route === 'gaya') initPreviews();
+}
 let route = 'home';
 function render(keep) {
   const y = window.scrollY;
   const view = VIEWS[route] ? VIEWS[route]() : TOOLS[route] ? viewTool(route) : viewHome();
-  $('#view').innerHTML = view; renderNav(route);
+  stopPreviews(); $('#view').innerHTML = view; renderNav(route);
+  if (route === 'gaya') initPreviews();
   const nm = (NAV.flatMap(g => g[1]).find(x => x[0] === route) || [])[2];
   document.title = (nm ? nm + ' · ' : '') + 'CreatorKit by fanyafriliaa';
   if (keep) window.scrollTo(0, y);
@@ -775,6 +1002,7 @@ function go() {
   const r = (location.hash.replace(/^#\//, '') || 'home');
   route = (VIEWS[r] || TOOLS[r]) ? r : 'home';
   if (route !== 'data') { editId = null; formOpen = false; }
+  if (route !== 'akun') acctForm = null;
   render(); window.scrollTo(0, 0); document.body.classList.remove('menu'); $('#menuBtn').setAttribute('aria-expanded', 'false');
 }
 window.addEventListener('hashchange', go);
@@ -789,15 +1017,26 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   const el = e.target;
+  if (el.id === 'acctSel') {
+    if (el.value === '__new') { location.hash = '#/akun'; renderNav(route); return; }
+    S.cur = el.value; editId = null; formOpen = false; save(); toast('Sekarang mengerjakan: ' + acct().name); render(true); return;
+  }
   if (el.dataset.bind && el.tagName === 'SELECT') { setPath(el.dataset.bind, el.value); save(); renderNav(route); }
   if (el.dataset.act === 'done') { S.done[el.dataset.id] = el.checked; save(); render(true); }
   if (el.dataset.act === 'import' && el.files[0]) {
     const fr = new FileReader();
-    fr.onload = () => { try { const o = JSON.parse(fr.result); if (typeof o !== 'object' || !o) throw 0; const k = S.settings.key; S = Object.assign(defaults(), o); S.settings = Object.assign({ key: '', model: 'otomatis', mode: 'Cepat' }, S.settings, { key: k }); save(); toast('Data berhasil dipulihkan'); render(); } catch { toast('File cadangan tidak valid', 1); } };
+    fr.onload = () => { try { const o = JSON.parse(fr.result); if (typeof o !== 'object' || !o) throw 0; const k = S.settings.key; S = wrap(normalize(o)); S.settings.key = k; save(); toast('Data berhasil dipulihkan'); render(); } catch { toast('File cadangan tidak valid', 1); } };
     fr.readAsText(el.files[0]);
   }
 });
 document.addEventListener('submit', e => {
+  if (e.target.id === 'aform') {
+    e.preventDefault();
+    const o = Object.fromEntries(new FormData(e.target)); if (!o.name.trim()) return;
+    if (acctForm && acctForm !== 'new') { Object.assign(S.accounts.find(a => a.id === acctForm), { name: o.name.trim(), handle: o.handle.trim(), emoji: o.emoji || '🌸' }); toast('Akun diperbarui'); acctForm = null; }
+    else { const a = newAcct(o.name.trim(), o.emoji || '🌸', o.handle.trim(), o.type || 'umum'); a.brand = { ...(ACCT_TYPES[a.type]?.brand || {}) }; S.accounts.push(a); S.cur = a.id; acctForm = null; toast('Akun dibuat. Isi Profil Brand-nya dulu ya 🌸'); save(); location.hash = '#/brand'; return; }
+    save(); return render();
+  }
   if (e.target.id !== 'dform') return;
   e.preventDefault();
   const o = Object.fromEntries(new FormData(e.target));
@@ -815,7 +1054,6 @@ document.addEventListener('click', async e => {
     case 'copyres': return copy(T(id).results[m] || '');
     case 'saveshelf': {
       const t = T(id), first = Object.values(t.inputs).find(v => typeof v === 'string' && v.trim()) || D.title;
-      if (!t.results[m]) { toast('Hasil masih kosong', 1); return; }
       t.saved.unshift({ ts: Date.now(), title: first.slice(0, 70), inputs: { ...t.inputs }, results: { ...t.results } }); save(); toast('Disimpan ke rak 🗃️'); return render(true);
     }
     case 'loadshelf': { const t = T(id), s = t.saved[+b.dataset.i]; t.inputs = { ...s.inputs }; t.results = { ...s.results }; save(); toast('Dibuka dari rak'); return render(true); }
@@ -836,6 +1074,29 @@ document.addEventListener('click', async e => {
     case 'calclear': if (confirm('Kosongkan tabel kalender?')) { S.cal.rows = []; save(); render(true); } return;
     case 'calcsv': return download('kalender-konten.csv', csv([CALCOLS.map(c => c[1]), ...S.cal.rows.map(r => CALCOLS.map(([k]) => r[k]))]), 'text/csv');
     case 'calstudio': { const r = S.cal.rows[+b.dataset.i], t = T('studio'); t.inputs.judul = r.ide || ''; t.inputs.hook = r.hook || ''; t.inputs.cta = r.cta || ''; if (L.platform.includes(r.platform)) t.inputs.platform = r.platform; if (L.format.includes(r.format)) t.inputs.format = r.format; if (L.funnel.includes(r.funnel)) t.inputs.funnel = r.funnel; save(); location.hash = '#/studio'; toast('Dikirim ke Studio Konten'); return; }
+    case 'pvplay': { const c = b.closest('.pv').querySelector('canvas'), on = c.dataset.paused === '1'; c.dataset.paused = on ? '0' : '1'; b.textContent = on ? '⏸ Jeda' : '▶ Putar'; return; }
+    case 'pvstage': {
+      const st = STYLES[+b.dataset.i]; if (!pvMod) { toast('Preview 3D belum siap', 1); return; }
+      pvMod.stop(); closeStage();
+      const el = document.createElement('div'); el.className = 'stage'; el.id = 'stage';
+      el.innerHTML = `<div class="stage-box"><canvas id="stagec" width="540" height="960"></canvas><div class="row" style="justify-content:center"><span class="small">${esc(st.emoji + ' ' + st.name)}. Rekam layar bagian kotak ini untuk bahan konten.</span><button class="btn sm orange" data-act="stageclose">✖ Tutup</button></div></div>`;
+      document.body.appendChild(el); stageStop = pvMod.stage($('#stagec'), st.name, st.palette); return;
+    }
+    case 'stageclose': return closeStage();
+    case 'gayause': T('studio').inputs.gaya = STYLES[+b.dataset.i].name; save(); toast('Gaya dipilih di Studio Konten'); location.hash = '#/studio'; return;
+    case 'gayaaff': T('affiliate').inputs.gaya = STYLES[+b.dataset.i].name; save(); toast('Gaya dipilih di Konten Affiliate'); location.hash = '#/affiliate'; return;
+    case 'gayacopy': { const st = STYLES[+b.dataset.i]; return copy(`Gaya: ${st.name} (${st.mood})\nPalet: ${st.palette.join(', ')}\nResep Three.js: ${st.three}`); }
+    case 'acctnew': acctForm = 'new'; render(true); return $('#aform')?.scrollIntoView({ behavior: 'smooth' });
+    case 'acctcancel': acctForm = null; return render(true);
+    case 'acctedit': acctForm = b.dataset.id; render(true); return $('#aform')?.scrollIntoView({ behavior: 'smooth' });
+    case 'acctpick': S.cur = b.dataset.id; editId = null; formOpen = false; save(); toast('Sekarang mengerjakan: ' + acct().name); return render(true);
+    case 'acctdup': { const src = S.accounts.find(a => a.id === b.dataset.id), a = newAcct(src.name + ' (salinan)', src.emoji, '', src.type); a.brand = { ...src.brand }; S.accounts.push(a); S.cur = a.id; save(); toast('Profil Brand disalin ke akun baru. Silakan sesuaikan.'); location.hash = '#/brand'; return; }
+    case 'acctdel': {
+      if (S.accounts.length < 2) { toast('Minimal harus ada 1 akun', 1); return; }
+      const a = S.accounts.find(x => x.id === b.dataset.id);
+      if (confirm(`Hapus akun "${a.name}" beserta semua datanya? Tidak bisa dibatalkan.`)) { S.accounts = S.accounts.filter(x => x.id !== a.id); if (S.cur === a.id) S.cur = S.accounts[0].id; save(); render(true); }
+      return;
+    }
     case 'formtoggle': if (editId) editId = null; formOpen = !formOpen; return render(true);
     case 'formcancel': editId = null; formOpen = false; return render(true);
     case 'dedit': editId = b.dataset.id; formOpen = true; render(); return $('#dform')?.scrollIntoView({ behavior: 'smooth' });
@@ -854,11 +1115,11 @@ document.addEventListener('click', async e => {
       return;
     }
     case 'export': return download('creatorkit-cadangan-' + today() + '.json', JSON.stringify({ ...S, settings: { ...S.settings, key: '' } }, null, 2), 'application/json');
-    case 'reset': if (confirm('Hapus SEMUA data (profil, hasil, konten, API Key) di browser ini? Tidak bisa dibatalkan.')) { localStorage.removeItem(KEY); S = defaults(); toast('Semua data dihapus'); render(); } return;
+    case 'reset': if (confirm('Hapus SEMUA data (profil, hasil, konten, API Key) di browser ini? Tidak bisa dibatalkan.')) { localStorage.removeItem(KEY); S = wrap(normalize(null)); toast('Semua data dihapus'); render(); } return;
   }
 });
 $('#menuBtn').addEventListener('click', () => { const o = document.body.classList.toggle('menu'); $('#menuBtn').setAttribute('aria-expanded', o); });
 $('#scrim').addEventListener('click', () => document.body.classList.remove('menu'));
-document.addEventListener('keydown', e => { if (e.key === 'Escape') document.body.classList.remove('menu'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.body.classList.remove('menu'); if ($('#stage')) closeStage(); } });
 
 go();
