@@ -1078,8 +1078,8 @@ document.addEventListener('click', async e => {
     case 'pvstage': {
       const st = STYLES[+b.dataset.i]; if (!pvMod) { toast('Preview 3D belum siap', 1); return; }
       pvMod.stop(); closeStage();
-      const el = document.createElement('div'); el.className = 'stage'; el.id = 'stage';
-      el.innerHTML = `<div class="stage-box"><canvas id="stagec" width="540" height="960"></canvas><div class="row" style="justify-content:center"><span class="small">${esc(st.emoji + ' ' + st.name)}. Rekam layar bagian kotak ini untuk bahan konten.</span><button class="btn sm orange" data-act="stageclose">✖ Tutup</button></div></div>`;
+      const el = document.createElement('div'); el.className = 'rec-overlay'; el.id = 'stage';
+      el.innerHTML = `<div class="rec-box"><canvas id="stagec" width="540" height="960"></canvas><div class="row" style="justify-content:center"><span class="small">${esc(st.emoji + ' ' + st.name)}. Rekam layar bagian kotak ini untuk bahan konten.</span><button class="btn sm orange" data-act="stageclose">✖ Tutup</button></div></div>`;
       document.body.appendChild(el); stageStop = pvMod.stage($('#stagec'), st.name, st.palette); return;
     }
     case 'stageclose': return closeStage();

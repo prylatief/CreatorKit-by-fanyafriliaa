@@ -167,6 +167,6 @@ details summary{cursor:pointer;font-weight:800}
 
 .pv canvas{width:100%;height:auto;aspect-ratio:8/5;display:block;border:2px solid var(--ink);border-radius:12px;background:#2b2d33}
 .pvbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.stage{position:fixed;inset:0;z-index:80;background:rgba(30,32,38,.86);display:grid;place-items:center;padding:12px}
-.stage-box{display:grid;gap:10px;justify-items:center;color:#fff}
-.stage-box canvas{height:min(80vh,900px);width:auto;max-width:92vw;aspect-ratio:9/16;border:3px solid #fff;border-radius:14px;display:block}
+.rec-overlay{position:fixed;inset:0;z-index:80;background:rgba(30,32,38,.86);display:grid;place-items:center;padding:12px}
+.rec-box{display:grid;gap:10px;justify-items:center;color:#fff}
+.rec-box canvas{height:min(80vh,900px);width:auto;max-width:92vw;aspect-ratio:9/16;border:3px solid #fff;border-radius:14px;display:block}
