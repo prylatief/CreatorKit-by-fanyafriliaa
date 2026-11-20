@@ -733,6 +733,8 @@ function viewAkun() {
 function viewGaya() {
   return head('Galeri Gaya Visual', 'Pilih gaya lalu pakai di Studio atau Konten Affiliate. Tiap gaya punya palet warna dan resep Three.js yang bisa disalin ke agent koding. Untuk konten non-3D, palet dan mood-nya tetap bisa jadi arahan desain.', '🎨') + `
   <div class="grid gauto">${STYLES.map((st, i) => `<div class="hookcard">
+    <div class="pv"><canvas class="pvc" width="480" height="300" data-style="${esc(st.name)}" data-palette="${st.palette.join(',')}" role="img" aria-label="Preview 3D gaya ${esc(st.name)}"></canvas>
+      <div class="pvbar"><button class="btn sm" data-act="pvplay">⏸ Jeda</button><button class="btn sm lilac" data-act="pvstage" data-i="${i}">📱 Mode rekam 9:16</button></div></div>
     <div class="f1" style="font-size:18px">${st.emoji} ${esc(st.name)}</div>
     <div class="row" style="gap:6px">${st.palette.map(c => `<span class="swatch" style="background:${c}" title="${c}"></span>`).join('')}<span class="small muted">${st.palette.join(' ')}</span></div>
     <div class="small"><b>Mood:</b> ${esc(st.mood)}</div>
@@ -969,11 +971,29 @@ function viewBank() {
 const VIEWS = {
   home: viewHome, akun: viewAkun, gaya: viewGaya, settings: viewSettings, brand: viewBrand, dashboard: viewDashboard, data: viewData, funnel: viewFunnel, bank: viewBank
 };
+let pvMod = null, stageStop = null;
+const stopPreviews = () => { try { pvMod && pvMod.stop(); } catch { /* abaikan */ } };
+async function initPreviews() {
+  const cs = [...document.querySelectorAll('.pvc')], reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  try {
+    pvMod = pvMod || await import('./preview3d.js');
+    if (route !== 'gaya' || !cs[0]?.isConnected) return;
+    if (!pvMod.mount(cs, reduced)) throw new Error('webgl');
+    if (reduced) document.querySelectorAll('[data-act=pvplay]').forEach(x => x.textContent = '▶ Putar');
+  } catch {
+    cs.forEach(c => { const d = document.createElement('div'); d.className = 'empty'; d.textContent = 'Preview 3D tidak bisa dimuat. Butuh WebGL, dan halaman harus dibuka lewat http(s) (hosting atau server lokal), bukan klik file langsung.'; c.closest('.pv')?.replaceWith(d); });
+  }
+}
+function closeStage() {
+  if (stageStop) { stageStop(); stageStop = null; }
+  $('#stage')?.remove(); if (route === 'gaya') initPreviews();
+}
 let route = 'home';
 function render(keep) {
   const y = window.scrollY;
   const view = VIEWS[route] ? VIEWS[route]() : TOOLS[route] ? viewTool(route) : viewHome();
-  $('#view').innerHTML = view; renderNav(route);
+  stopPreviews(); $('#view').innerHTML = view; renderNav(route);
+  if (route === 'gaya') initPreviews();
   const nm = (NAV.flatMap(g => g[1]).find(x => x[0] === route) || [])[2];
   document.title = (nm ? nm + ' · ' : '') + 'CreatorKit by fanyafriliaa';
   if (keep) window.scrollTo(0, y);
@@ -1054,6 +1074,15 @@ document.addEventListener('click', async e => {
     case 'calclear': if (confirm('Kosongkan tabel kalender?')) { S.cal.rows = []; save(); render(true); } return;
     case 'calcsv': return download('kalender-konten.csv', csv([CALCOLS.map(c => c[1]), ...S.cal.rows.map(r => CALCOLS.map(([k]) => r[k]))]), 'text/csv');
     case 'calstudio': { const r = S.cal.rows[+b.dataset.i], t = T('studio'); t.inputs.judul = r.ide || ''; t.inputs.hook = r.hook || ''; t.inputs.cta = r.cta || ''; if (L.platform.includes(r.platform)) t.inputs.platform = r.platform; if (L.format.includes(r.format)) t.inputs.format = r.format; if (L.funnel.includes(r.funnel)) t.inputs.funnel = r.funnel; save(); location.hash = '#/studio'; toast('Dikirim ke Studio Konten'); return; }
+    case 'pvplay': { const c = b.closest('.pv').querySelector('canvas'), on = c.dataset.paused === '1'; c.dataset.paused = on ? '0' : '1'; b.textContent = on ? '⏸ Jeda' : '▶ Putar'; return; }
+    case 'pvstage': {
+      const st = STYLES[+b.dataset.i]; if (!pvMod) { toast('Preview 3D belum siap', 1); return; }
+      pvMod.stop(); closeStage();
+      const el = document.createElement('div'); el.className = 'stage'; el.id = 'stage';
+      el.innerHTML = `<div class="stage-box"><canvas id="stagec" width="540" height="960"></canvas><div class="row" style="justify-content:center"><span class="small">${esc(st.emoji + ' ' + st.name)}. Rekam layar bagian kotak ini untuk bahan konten.</span><button class="btn sm orange" data-act="stageclose">✖ Tutup</button></div></div>`;
+      document.body.appendChild(el); stageStop = pvMod.stage($('#stagec'), st.name, st.palette); return;
+    }
+    case 'stageclose': return closeStage();
     case 'gayause': T('studio').inputs.gaya = STYLES[+b.dataset.i].name; save(); toast('Gaya dipilih di Studio Konten'); location.hash = '#/studio'; return;
     case 'gayaaff': T('affiliate').inputs.gaya = STYLES[+b.dataset.i].name; save(); toast('Gaya dipilih di Konten Affiliate'); location.hash = '#/affiliate'; return;
     case 'gayacopy': { const st = STYLES[+b.dataset.i]; return copy(`Gaya: ${st.name} (${st.mood})\nPalet: ${st.palette.join(', ')}\nResep Three.js: ${st.three}`); }
@@ -1091,6 +1120,6 @@ document.addEventListener('click', async e => {
 });
 $('#menuBtn').addEventListener('click', () => { const o = document.body.classList.toggle('menu'); $('#menuBtn').setAttribute('aria-expanded', o); });
 $('#scrim').addEventListener('click', () => document.body.classList.remove('menu'));
-document.addEventListener('keydown', e => { if (e.key === 'Escape') document.body.classList.remove('menu'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.body.classList.remove('menu'); if ($('#stage')) closeStage(); } });
 
 go();
