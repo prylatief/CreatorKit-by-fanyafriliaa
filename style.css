@@ -24,7 +24,8 @@ a{color:inherit}
 .brand-star{display:inline-block;animation:twinkle 3s ease-in-out infinite}
 @keyframes twinkle{50%{transform:rotate(18deg) scale(1.15)}}
 .menu-btn{display:none;border:2px solid var(--ink);background:var(--yellow);border-radius:10px;width:42px;height:42px;font-size:20px;cursor:pointer}
-.mode-pill{margin-left:auto;font-size:13px;font-weight:800;padding:4px 12px;border:2px solid var(--ink);border-radius:999px;background:var(--mint)}
+.acct-sel{margin-left:auto;width:auto;max-width:240px;padding:6px 10px;font-weight:800;background:var(--lilac);border-radius:999px}
+.mode-pill{font-size:13px;font-weight:800;padding:4px 12px;border:2px solid var(--ink);border-radius:999px;background:var(--mint)}
 .mode-pill.manual{background:var(--orange)}
 
 .shell{display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;max-width:1280px;margin:0 auto;padding:22px 16px 80px}
@@ -90,6 +91,7 @@ input:focus,select:focus,textarea:focus,button:focus-visible,a:focus-visible{out
 /* chips + tags */
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:2px solid var(--ink);background:#fff;border-radius:999px;padding:4px 12px;font-weight:800;font-size:14px;cursor:pointer}
+.chip:has(input:checked){background:var(--yellow);box-shadow:2px 2px 0 var(--ink)}
 .chip.on{background:var(--yellow)}
 .tag{display:inline-block;padding:1px 9px;border:2px solid var(--ink);border-radius:999px;font-size:12px;font-weight:800;background:var(--blue)}
 .tag.tofu{background:var(--mint)} .tag.mofu{background:var(--yellow)} .tag.bofu{background:var(--pink)}
@@ -155,6 +157,7 @@ details summary{cursor:pointer;font-weight:800}
   .page-head h1{font-size:28px}
   .hero h1{font-size:34px}
   .brand small{display:none}
-  .mode-pill{font-size:12px}
+  .mode-pill{display:none}
+  .acct-sel{max-width:52vw}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}

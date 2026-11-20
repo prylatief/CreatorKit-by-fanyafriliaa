@@ -81,17 +81,27 @@ const BRAND = [
 
 /* ---------- state ---------- */
 const KEY = 'creatorkit.fanyafriliaa.v1';
-const defaults = () => ({
-  brand: {}, tools: {}, data: [], done: {},
-  cal: { rows: [] },
-  settings: { key: '', model: 'otomatis', mode: 'Cepat' }
-});
-let S = (() => {
-  try { const r = JSON.parse(localStorage.getItem(KEY) || 'null'); return Object.assign(defaults(), r || {}); }
-  catch { return defaults(); }
-})();
-S.settings = Object.assign({ key: '', model: 'otomatis', mode: 'Cepat' }, S.settings);
-S.cal = Object.assign({ rows: [] }, S.cal);
+const newAcct = (name = 'Akun 1', emoji = '🌸', handle = '') => ({ id: uid(), name, emoji, handle, brand: {}, tools: {}, data: [], done: {}, cal: { rows: [] } });
+function normalize(raw) {
+  const st = { settings: Object.assign({ key: '', model: 'otomatis', mode: 'Cepat' }, raw && raw.settings), accounts: [], cur: '' };
+  if (raw && Array.isArray(raw.accounts) && raw.accounts.length) {
+    st.accounts = raw.accounts.map(a => Object.assign(newAcct(), a, { cal: Object.assign({ rows: [] }, a.cal) }));
+    st.cur = raw.cur;
+  } else { // data lama (satu akun) dipindah jadi Akun 1
+    const a = newAcct('Akun 1');
+    if (raw) { ['brand', 'tools', 'data', 'done'].forEach(k => { if (raw[k]) a[k] = raw[k]; }); if (raw.cal) a.cal = Object.assign({ rows: [] }, raw.cal); }
+    st.accounts = [a];
+  }
+  if (!st.accounts.some(a => a.id === st.cur)) st.cur = st.accounts[0].id;
+  return st;
+}
+const acct = () => S.accounts.find(a => a.id === S.cur) || S.accounts[0];
+function wrap(st) { // S.brand, S.data, dst. otomatis menunjuk ke akun yang sedang dipilih
+  ['brand', 'tools', 'data', 'done', 'cal'].forEach(k => Object.defineProperty(st, k, { get() { return acct()[k]; }, set(v) { acct()[k] = v; }, enumerable: false, configurable: true }));
+  return st;
+}
+let S;
+try { S = wrap(normalize(JSON.parse(localStorage.getItem(KEY) || 'null'))); } catch { S = wrap(normalize(null)); }
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* storage penuh/diblokir */ } };
 
 function setPath(path, val) {
@@ -391,8 +401,8 @@ async function runTool(id, mode) {
 }
 
 /* ---------- hitung data konten ---------- */
-function computed() {
-  const d = S.data.map(r => {
+function computed(src = S.data) {
+  const d = src.map(r => {
     const views = num(r.views), inter = num(r.likes) + num(r.komen) + num(r.share) + num(r.save);
     const pct = v => views ? v / views * 100 : 0;
     const h = parseInt((r.jam || '').slice(0, 2), 10);
@@ -468,14 +478,14 @@ function download(name, text, type = 'text/plain') {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type + ';charset=utf-8' })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 const csv = rows => rows.map(r => r.map(c => '"' + String(c ?? '').replace(/"/g, '""') + '"').join(',')).join('\n');
-const head = (t, p, e = '') => `<div class="page-head"><h1>${e} <span class="hl">${esc(t)}</span></h1><p>${p}</p></div>`;
+const head = (t, p, e = '') => `<div class="page-head"><h1>${e} <span class="hl">${esc(t)}</span></h1><p>${p}</p><p style="margin-top:8px"><a href="#/akun" class="tag" style="text-decoration:none" title="Ganti akun">${acct().emoji} ${esc(acct().name)}</a></p></div>`;
 const opts = (arr, cur) => arr.map(o => `<option ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
 const pilarList = () => [1, 2, 3, 4, 5].map(i => S.brand['pilar' + i]).filter(Boolean);
 const funnelTag = f => `<span class="tag ${String(f).toLowerCase()}">${esc(f)}</span>`;
 
 /* ---------- navigasi ---------- */
 const NAV = [
-  ['Mulai', [['home', '🏠', 'Panduan'], ['settings', '⚙️', 'Pengaturan'], ['brand', '🧠', 'Profil Brand']]],
+  ['Mulai', [['home', '🏠', 'Panduan'], ['akun', '👥', 'Akun Saya'], ['settings', '⚙️', 'Pengaturan'], ['brand', '🧠', 'Profil Brand']]],
   ['Riset', [['riset', '🧭', 'Riset Topik'], ['bedah', '🔬', 'Bedah Viral']]],
   ['Bikin Konten', [['ide', '💡', 'Ide Konten'], ['hook', '🎣', 'Hook'], ['studio', '🎬', 'Studio Konten'], ['kalender', '🗓️', 'Kalender']]],
   ['Ukur', [['data', '📈', 'Data Konten'], ['dashboard', '📊', 'Dashboard']]],
@@ -494,6 +504,8 @@ const stepNo = (() => { let n = 0; const m = {}; STEPS.forEach(([, a]) => a.forE
 function renderNav(cur) {
   $('#side').innerHTML = NAV.map(([g, items]) => `<h4>${g}</h4>` + items.map(([id, e, l]) =>
     `<a href="#/${id}" class="${id === cur ? 'on' : ''}" ${id === cur ? 'aria-current="page"' : ''}><span>${e}</span>${l}${S.done[id] ? '<span class="ck">✅</span>' : ''}</a>`).join('')).join('');
+  const sel = $('#acctSel');
+  sel.innerHTML = S.accounts.map(a => `<option value="${a.id}" ${a.id === S.cur ? 'selected' : ''}>${a.emoji} ${esc(a.name)}</option>`).join('') + '<option value="__new">➕ Kelola / tambah akun...</option>';
   const manual = !S.settings.key;
   const p = $('#modePill'); p.textContent = manual ? '📋 Mode manual' : '✨ Mode otomatis'; p.className = 'mode-pill' + (manual ? ' manual' : '');
 }
@@ -508,6 +520,7 @@ function viewHome() {
     <p>Riset topik, bedah konten viral, ide, hook, script, caption & kalender dalam satu tempat. Bisa <b>OTOMATIS</b> (✨ pakai API Gemini gratis milikmu) atau <b>MANUAL</b> (📋 buat prompt, salin ke ChatGPT / Gemini / Claude).</p>
     <div class="row" style="margin-top:14px">
       <a class="btn pink" href="#/${filled < 5 ? 'brand' : 'riset'}">${filled < 5 ? '🧠 Mulai: isi Profil Brand' : '🧭 Lanjut: Riset Topik'}</a>
+      <a class="btn lilac" href="#/akun">👥 Kelola Akun (${S.accounts.length})</a>
       <a class="btn" href="#/settings">⚙️ Pengaturan</a>
     </div>
     <p class="small muted" style="margin-top:10px">by Fany Afrilia. Semua datamu tersimpan di browser ini saja.</p>
@@ -534,6 +547,44 @@ function viewHome() {
   <div class="card"><h2>🎨 Arti tanda</h2><div class="grid g2 small">
     <div>🌸 <b>Kolom pink</b>: tempat mengisi data</div><div>✨ <b>Tombol AI</b>: jalankan otomatis (perlu API Key)</div>
     <div>📋 <b>Buat prompt</b>: tanpa API, salin ke AI lalu tempel jawabannya</div><div>📝 <b>Kolom Hasil</b>: jawaban AI, bisa diedit & disimpan</div></div></div>`;
+}
+
+
+let acctForm = null; // null | 'new' | id akun yang diubah
+const EMOJIS = ['🌸', '🎀', '⭐', '🍓', '🌈', '🐱', '🎧', '📚', '☕', '🦋', '🍋', '🌙', '🍑', '🧸', '🎨', '🛍️'];
+const CARDBG = ['yellow', 'pink', 'mint', 'blue', 'lilac', 'orange'];
+function viewAkun() {
+  const rows = S.accounts.map(a => {
+    const d = computed(a.data), n = d.length;
+    return { a, n, avg: n ? d.reduce((s, x) => s + x.views, 0) / n : 0, sc: n ? d.reduce((s, x) => s + x.score, 0) / n : 0,
+      filled: BRAND.filter(([k]) => (a.brand[k] || '').trim()).length, last: a.data.map(x => x.tgl).filter(Boolean).sort().at(-1) };
+  });
+  const ed = acctForm && acctForm !== 'new' ? S.accounts.find(a => a.id === acctForm) : null;
+  return head('Akun Saya', 'Satu orang, banyak akun sosmed. Tiap akun punya Profil Brand, riset, ide, kalender, dan data konten sendiri, jadi hasil AI tidak tercampur.', '👥') + `
+  <div class="row" style="margin-bottom:16px"><button class="btn pink" data-act="acctnew">➕ Tambah akun</button><span class="small muted">${S.accounts.length} akun terdaftar, tanpa batas jumlah.</span></div>
+  ${acctForm ? `<form class="card" id="aform"><h2>${ed ? '✏️ Ubah akun' : '🌸 Akun baru'}</h2>
+    <div class="grid g2 pink-field">
+      <label class="f">Nama akun / brand ★<input name="name" type="text" required maxlength="40" value="${esc(ed?.name || '')}" placeholder="Misal: Toko Kue Fany"></label>
+      <label class="f">Username (opsional)<input name="handle" type="text" maxlength="40" value="${esc(ed?.handle || '')}" placeholder="@namaakun"></label>
+      <div class="f wide">Ikon<div class="chips">${EMOJIS.map((e, i) => `<label class="chip" style="font-size:20px"><input type="radio" name="emoji" value="${e}" hidden ${(ed ? ed.emoji === e : i === S.accounts.length % EMOJIS.length) ? 'checked' : ''}>${e}</label>`).join('')}</div></div>
+    </div>
+    <div class="row" style="margin-top:14px"><button class="btn mint" type="submit">💾 Simpan</button><button class="btn" type="button" data-act="acctcancel">Batal</button></div></form>` : ''}
+  <div class="grid gauto">${rows.map(({ a, n, filled, last }, i) => `
+    <div class="card" style="margin:0;background:${a.id === S.cur ? 'var(--' + CARDBG[i % 6] + ')' : 'var(--paper)'}">
+      <div class="row" style="flex-wrap:nowrap"><span style="font-size:34px">${a.emoji}</span>
+        <div style="min-width:0"><h3 style="margin:0;overflow:hidden;text-overflow:ellipsis">${esc(a.name)}</h3><div class="small muted">${esc(a.handle || 'tanpa username')}</div></div>
+        ${a.id === S.cur ? '<span class="tag" style="margin-left:auto">aktif</span>' : ''}</div>
+      <p class="small" style="margin:10px 0">Brand ${filled}/${BRAND.length} · ${n} konten</p>
+      <div class="bar mint"><i style="width:${Math.round(filled / BRAND.length * 100)}%"></i></div>
+      <div class="row" style="margin-top:12px">
+        ${a.id === S.cur ? '' : `<button class="btn sm mint" data-act="acctpick" data-id="${a.id}">Pakai</button>`}
+        <button class="btn sm blue" data-act="acctedit" data-id="${a.id}">Ubah</button>
+        <button class="btn sm yellow" data-act="acctdup" data-id="${a.id}" title="Salin Profil Brand ke akun baru">Duplikat</button>
+        <button class="btn sm orange" data-act="acctdel" data-id="${a.id}" aria-label="Hapus akun">Hapus</button></div></div>`).join('')}</div>
+  <div class="card" style="margin-top:20px"><h2>📊 Perbandingan semua akun</h2>
+    <div class="tablewrap"><table><thead><tr><th>Akun</th><th class="n">Konten</th><th class="n">Rata views</th><th class="n">Rata skor</th><th>Posting terakhir</th></tr></thead><tbody>
+    ${rows.map(r => `<tr><td>${r.a.emoji} <b>${esc(r.a.name)}</b></td><td class="n">${r.n}</td><td class="n">${r.n ? fmt(r.avg) : '-'}</td><td class="n">${r.n ? Math.round(r.sc) : '-'}</td><td>${r.last ? dmy(r.last) : '-'}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
 }
 
 function viewSettings() {
@@ -760,7 +811,7 @@ function viewBank() {
 }
 
 const VIEWS = {
-  home: viewHome, settings: viewSettings, brand: viewBrand, dashboard: viewDashboard, data: viewData, funnel: viewFunnel, bank: viewBank
+  home: viewHome, akun: viewAkun, settings: viewSettings, brand: viewBrand, dashboard: viewDashboard, data: viewData, funnel: viewFunnel, bank: viewBank
 };
 let route = 'home';
 function render(keep) {
@@ -775,6 +826,7 @@ function go() {
   const r = (location.hash.replace(/^#\//, '') || 'home');
   route = (VIEWS[r] || TOOLS[r]) ? r : 'home';
   if (route !== 'data') { editId = null; formOpen = false; }
+  if (route !== 'akun') acctForm = null;
   render(); window.scrollTo(0, 0); document.body.classList.remove('menu'); $('#menuBtn').setAttribute('aria-expanded', 'false');
 }
 window.addEventListener('hashchange', go);
@@ -789,15 +841,26 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   const el = e.target;
+  if (el.id === 'acctSel') {
+    if (el.value === '__new') { location.hash = '#/akun'; renderNav(route); return; }
+    S.cur = el.value; editId = null; formOpen = false; save(); toast('Sekarang mengerjakan: ' + acct().name); render(true); return;
+  }
   if (el.dataset.bind && el.tagName === 'SELECT') { setPath(el.dataset.bind, el.value); save(); renderNav(route); }
   if (el.dataset.act === 'done') { S.done[el.dataset.id] = el.checked; save(); render(true); }
   if (el.dataset.act === 'import' && el.files[0]) {
     const fr = new FileReader();
-    fr.onload = () => { try { const o = JSON.parse(fr.result); if (typeof o !== 'object' || !o) throw 0; const k = S.settings.key; S = Object.assign(defaults(), o); S.settings = Object.assign({ key: '', model: 'otomatis', mode: 'Cepat' }, S.settings, { key: k }); save(); toast('Data berhasil dipulihkan'); render(); } catch { toast('File cadangan tidak valid', 1); } };
+    fr.onload = () => { try { const o = JSON.parse(fr.result); if (typeof o !== 'object' || !o) throw 0; const k = S.settings.key; S = wrap(normalize(o)); S.settings.key = k; save(); toast('Data berhasil dipulihkan'); render(); } catch { toast('File cadangan tidak valid', 1); } };
     fr.readAsText(el.files[0]);
   }
 });
 document.addEventListener('submit', e => {
+  if (e.target.id === 'aform') {
+    e.preventDefault();
+    const o = Object.fromEntries(new FormData(e.target)); if (!o.name.trim()) return;
+    if (acctForm && acctForm !== 'new') { Object.assign(S.accounts.find(a => a.id === acctForm), { name: o.name.trim(), handle: o.handle.trim(), emoji: o.emoji || '🌸' }); toast('Akun diperbarui'); acctForm = null; }
+    else { const a = newAcct(o.name.trim(), o.emoji || '🌸', o.handle.trim()); S.accounts.push(a); S.cur = a.id; acctForm = null; toast('Akun dibuat. Isi Profil Brand-nya dulu ya 🌸'); save(); location.hash = '#/brand'; return; }
+    save(); return render();
+  }
   if (e.target.id !== 'dform') return;
   e.preventDefault();
   const o = Object.fromEntries(new FormData(e.target));
@@ -836,6 +899,17 @@ document.addEventListener('click', async e => {
     case 'calclear': if (confirm('Kosongkan tabel kalender?')) { S.cal.rows = []; save(); render(true); } return;
     case 'calcsv': return download('kalender-konten.csv', csv([CALCOLS.map(c => c[1]), ...S.cal.rows.map(r => CALCOLS.map(([k]) => r[k]))]), 'text/csv');
     case 'calstudio': { const r = S.cal.rows[+b.dataset.i], t = T('studio'); t.inputs.judul = r.ide || ''; t.inputs.hook = r.hook || ''; t.inputs.cta = r.cta || ''; if (L.platform.includes(r.platform)) t.inputs.platform = r.platform; if (L.format.includes(r.format)) t.inputs.format = r.format; if (L.funnel.includes(r.funnel)) t.inputs.funnel = r.funnel; save(); location.hash = '#/studio'; toast('Dikirim ke Studio Konten'); return; }
+    case 'acctnew': acctForm = 'new'; render(true); return $('#aform')?.scrollIntoView({ behavior: 'smooth' });
+    case 'acctcancel': acctForm = null; return render(true);
+    case 'acctedit': acctForm = b.dataset.id; render(true); return $('#aform')?.scrollIntoView({ behavior: 'smooth' });
+    case 'acctpick': S.cur = b.dataset.id; editId = null; formOpen = false; save(); toast('Sekarang mengerjakan: ' + acct().name); return render(true);
+    case 'acctdup': { const src = S.accounts.find(a => a.id === b.dataset.id), a = newAcct(src.name + ' (salinan)', src.emoji, ''); a.brand = { ...src.brand }; S.accounts.push(a); S.cur = a.id; save(); toast('Profil Brand disalin ke akun baru. Silakan sesuaikan.'); location.hash = '#/brand'; return; }
+    case 'acctdel': {
+      if (S.accounts.length < 2) { toast('Minimal harus ada 1 akun', 1); return; }
+      const a = S.accounts.find(x => x.id === b.dataset.id);
+      if (confirm(`Hapus akun "${a.name}" beserta semua datanya? Tidak bisa dibatalkan.`)) { S.accounts = S.accounts.filter(x => x.id !== a.id); if (S.cur === a.id) S.cur = S.accounts[0].id; save(); render(true); }
+      return;
+    }
     case 'formtoggle': if (editId) editId = null; formOpen = !formOpen; return render(true);
     case 'formcancel': editId = null; formOpen = false; return render(true);
     case 'dedit': editId = b.dataset.id; formOpen = true; render(); return $('#dform')?.scrollIntoView({ behavior: 'smooth' });
@@ -854,7 +928,7 @@ document.addEventListener('click', async e => {
       return;
     }
     case 'export': return download('creatorkit-cadangan-' + today() + '.json', JSON.stringify({ ...S, settings: { ...S.settings, key: '' } }, null, 2), 'application/json');
-    case 'reset': if (confirm('Hapus SEMUA data (profil, hasil, konten, API Key) di browser ini? Tidak bisa dibatalkan.')) { localStorage.removeItem(KEY); S = defaults(); toast('Semua data dihapus'); render(); } return;
+    case 'reset': if (confirm('Hapus SEMUA data (profil, hasil, konten, API Key) di browser ini? Tidak bisa dibatalkan.')) { localStorage.removeItem(KEY); S = wrap(normalize(null)); toast('Semua data dihapus'); render(); } return;
   }
 });
 $('#menuBtn').addEventListener('click', () => { const o = document.body.classList.toggle('menu'); $('#menuBtn').setAttribute('aria-expanded', o); });
