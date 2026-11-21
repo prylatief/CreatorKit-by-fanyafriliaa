@@ -41,8 +41,9 @@ export function buildSpecScene(spec) {
   const room = { w: 5, d: 5, h: 3, walls: ['back', 'left'], floor: true, ...(spec.room || {}) };
   ['w', 'd', 'h'].forEach(k => { if (nv(room[k], 5, 'room.' + k) <= 0) fail('room.' + k, 'harus > 0'); });
   if (!Array.isArray(room.walls) || room.walls.some(w => w !== 'back' && w !== 'left')) fail('room.walls', 'isi dengan "back" dan/atau "left" ([] = tanpa dinding)');
-  const cs = { size: 4, az: 45, elev: 35.264, dist: 40, sway: 12, swaySpeed: .4, target: [0, .8, 0], ...(spec.camera || {}) };
-  ['size', 'az', 'elev', 'dist', 'sway', 'swaySpeed'].forEach(k => nv(cs[k], 0, 'camera.' + k));
+  const cs = { size: 4, az: 45, elev: 35.264, dist: 40, sway: 12, swaySpeed: .4, target: [0, .8, 0], fit: false, pad: 1.2, ...(spec.camera || {}) };
+  ['size', 'az', 'elev', 'dist', 'sway', 'swaySpeed', 'pad'].forEach(k => nv(cs[k], 0, 'camera.' + k));
+  if (cs.fit !== false && cs.fit !== 'objects' && cs.fit !== 'all') fail('camera.fit', 'isi "objects", "all", atau false');
   vec(cs.target, null, 'camera.target');
 
   const s = scene(col('bg', 'palette.bg')), shadows = spec.shadows !== false;
@@ -50,7 +51,12 @@ export function buildSpecScene(spec) {
   const sun = new THREE.DirectionalLight(0xffffff, .9); sun.position.set(6, 9, 5);
   if (shadows) { sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9 }); sun.shadow.bias = -.0005; }
   s.add(sun);
-  const solid = (g, color, o = {}) => { const m = new THREE.Mesh(g, mat(color, o)); m.castShadow = shadows; m.receiveShadow = shadows; return m; };
+  const edgeHex = spec.edges ? col(spec.edges === true ? '#000000' : spec.edges, 'edges') : null;
+  const solid = (g, color, o = {}, edge = null) => {
+    const m = new THREE.Mesh(g, mat(color, o)); m.castShadow = shadows; m.receiveShadow = shadows;
+    if (edge) m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 25), new THREE.LineBasicMaterial({ color: C(edge), transparent: true, opacity: .55 })));
+    return m;
+  };
   if (room.floor) { const f = solid(new THREE.BoxGeometry(room.w, .2, room.d), col('floor', 'palette.floor')); f.position.y = -.1; s.add(f); }
   if (room.walls.includes('back')) { const w = solid(new THREE.BoxGeometry(room.w + .2, room.h, .2), col('wallBack', 'palette.wallBack')); w.position.set(-.1, room.h / 2, -room.d / 2 - .1); s.add(w); }
   if (room.walls.includes('left')) { const w = solid(new THREE.BoxGeometry(.2, room.h, room.d), col('wallLeft', 'palette.wallLeft')); w.position.set(-room.w / 2 - .1, room.h / 2, 0); s.add(w); }
@@ -69,18 +75,18 @@ export function buildSpecScene(spec) {
     const c = o.type === 'light' ? col(o.color ?? '#ffffff', P + '.color') : o.type === 'group' ? null : col(o.color ?? 'accent', P + '.color');
     const opt = { roughness: nv(o.rough, .75, P + '.rough'), metalness: nv(o.metal, 0, P + '.metal'), flatShading: !!o.flat };
     if (o.emissive != null) { opt.emissive = C(col(o.emissive, P + '.emissive')); opt.emissiveIntensity = nv(o.glow, .8, P + '.glow'); }
-    let ref = null;
-    if (o.type === 'box') { const z = vec(o.size, [1, 1, 1], P + '.size'); const m = solid(new THREE.BoxGeometry(...z), c, opt); m.position.y = z[1] / 2; g.add(m); }
-    else if (o.type === 'cylinder') { const r = nv(o.r, .5, P + '.r'), h = nv(o.h, 1, P + '.h'); const m = solid(new THREE.CylinderGeometry(nv(o.rTop, r, P + '.rTop'), r, h, 28), c, opt); m.position.y = h / 2; g.add(m); }
-    else if (o.type === 'cone') { const r = nv(o.r, .5, P + '.r'), h = nv(o.h, 1, P + '.h'); const m = solid(new THREE.ConeGeometry(r, h, 28), c, opt); m.position.y = h / 2; g.add(m); }
-    else if (o.type === 'sphere') { const r = nv(o.r, .5, P + '.r'); const m = solid(new THREE.SphereGeometry(r, 28, 18), c, opt); m.position.y = o.center ? 0 : r; g.add(m); }
+    let ref = null; const eh = o.edge === false ? null : (o.edge ? col(o.edge === true ? '#000000' : o.edge, P + '.edge') : edgeHex);
+    if (o.type === 'box') { const z = vec(o.size, [1, 1, 1], P + '.size'); const m = solid(new THREE.BoxGeometry(...z), c, opt, eh); m.position.y = z[1] / 2; g.add(m); }
+    else if (o.type === 'cylinder') { const r = nv(o.r, .5, P + '.r'), h = nv(o.h, 1, P + '.h'); const m = solid(new THREE.CylinderGeometry(nv(o.rTop, r, P + '.rTop'), r, h, 28), c, opt, eh); m.position.y = h / 2; g.add(m); }
+    else if (o.type === 'cone') { const r = nv(o.r, .5, P + '.r'), h = nv(o.h, 1, P + '.h'); const m = solid(new THREE.ConeGeometry(r, h, 28), c, opt, eh); m.position.y = h / 2; g.add(m); }
+    else if (o.type === 'sphere') { const r = nv(o.r, .5, P + '.r'); const m = solid(new THREE.SphereGeometry(r, 28, 18), c, opt, eh); m.position.y = o.center ? 0 : r; g.add(m); }
     else if (o.type === 'light') {
       const r = nv(o.r, .14, P + '.r'); if (r > 0) g.add(mesh(new THREE.SphereGeometry(r, 16, 12), basic(c)));
       const pl = new THREE.PointLight(C(c), nv(o.intensity, 6, P + '.intensity'), nv(o.distance, 6, P + '.distance')); g.add(pl); ref = pl; pl.userData.i0 = pl.intensity;
     }
     const anims = (o.anim ?? []); if (!Array.isArray(anims)) fail(P + '.anim', 'harus array');
     anims.forEach((a, j) => { if (!a || !KINDS.includes(a.kind)) fail(`${P}.anim[${j}].kind`, `"${a && a.kind}" tidak dikenal. Pilihan: ${KINDS.join(', ')}`); if (a.kind === 'explode') { vec(a.dir, [0, 1, 0], `${P}.anim[${j}].dir`); nv(a.t0, 0, `${P}.anim[${j}].t0`); nv(a.t1, 1, `${P}.anim[${j}].t1`); } });
-    items.push({ g, base: pos.slice(), rot0: g.rotation.y, anims, light: ref });
+    items.push({ g, base: pos.slice(), rot0: g.rotation.y, anims, light: ref, top: o.parent == null });
   });
 
   const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, .1, 300);
@@ -89,9 +95,15 @@ export function buildSpecScene(spec) {
     cam.position.set(tx + Math.cos(el) * Math.sin(az) * cs.dist, ty + Math.sin(el) * cs.dist, tz + Math.cos(el) * Math.cos(az) * cs.dist); cam.lookAt(tx, ty, tz);
   };
   const dirv = new THREE.Vector3();
-  return {
+  let fit = null;
+  const inst = {
     scene: s, camera: cam, duration: spec.duration, names: [...byName.keys()],
-    resize(a) { const hw = a < 1 ? cs.size : cs.size * .75 * a, hh = a < 1 ? cs.size / a : cs.size * .75; cam.left = -hw; cam.right = hw; cam.top = hh; cam.bottom = -hh; cam.updateProjectionMatrix(); },
+    resize(a) {
+      let hw, hh;
+      if (fit) { hw = Math.max(fit.hu, fit.hv * a); hh = hw / a; }
+      else { hw = a < 1 ? cs.size : cs.size * .75 * a; hh = a < 1 ? cs.size / a : cs.size * .75; }
+      cam.left = -hw; cam.right = hw; cam.top = hh; cam.bottom = -hh; cam.updateProjectionMatrix();
+    },
     tick(t) {
       place(t);
       items.forEach(({ g, base, rot0, anims, light }) => {
@@ -114,6 +126,23 @@ export function buildSpecScene(spec) {
       });
     }
   };
+  if (cs.fit && (cs.fit === 'all' || items.length)) { // zoom & tengahkan kamera otomatis ke objek (termasuk saat meledak)
+    const el = cs.elev * D2R, az = cs.az * D2R, Tm = Math.max(.5, nv(spec.duration, 10, 'duration'));
+    const f = new THREE.Vector3(-Math.cos(el) * Math.sin(az), -Math.sin(el), -Math.cos(el) * Math.cos(az)).normalize();
+    const right = new THREE.Vector3().crossVectors(f, new THREE.Vector3(0, 1, 0)).normalize(), up = new THREE.Vector3().crossVectors(right, f).normalize();
+    const tops = cs.fit === 'all' ? [s] : items.filter(i => i.top).map(i => i.g), bx = new THREE.Box3(), p = new THREE.Vector3();
+    let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9;
+    for (let k = 0; k <= 60; k++) {
+      inst.tick(Tm * k / 60); s.updateMatrixWorld(true);
+      tops.forEach(o => { bx.setFromObject(o); if (bx.isEmpty()) return; for (const x of [bx.min.x, bx.max.x]) for (const y of [bx.min.y, bx.max.y]) for (const z of [bx.min.z, bx.max.z]) { p.set(x, y, z); const u = p.dot(right), v = p.dot(up); u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v); } });
+    }
+    if (u1 > u0) {
+      fit = { hu: (u1 - u0) / 2 * cs.pad, hv: (v1 - v0) / 2 * cs.pad };
+      const t0 = new THREE.Vector3(...cs.target), nt = right.clone().multiplyScalar((u0 + u1) / 2).add(up.clone().multiplyScalar((v0 + v1) / 2)).add(f.clone().multiplyScalar(t0.dot(f)));
+      cs.target = [nt.x, nt.y, nt.z];
+    }
+  }
+  return inst;
 }
 const ROOM_SPEC = {"duration": 10, "palette": {"desk": "#6B705C", "pot": "#c97b63", "leaf": "#6a9a5b", "pillow": "#ffffff", "screen": "#4f8cff", "bulb": "#fff2b0"}, "room": {"w": 5, "d": 5, "h": 3}, "camera": {"size": 3.9, "elev": 38, "sway": 14, "swaySpeed": 0.4, "target": [0, 0.9, 0]}, "objects": [{"name": "bed", "type": "box", "pos": [-1.3, 0, -0.8], "size": [1.6, 0.4, 2.2], "color": "accent", "anim": [{"kind": "appear", "delay": 0.2}]}, {"name": "pillow", "type": "box", "parent": "bed", "pos": [0, 0.4, -0.8], "size": [1.5, 0.15, 0.9], "color": "pillow"}, {"name": "desk", "type": "group", "pos": [1.1, 0, -1.9], "anim": [{"kind": "appear", "delay": 0.5}]}, {"type": "box", "parent": "desk", "pos": [0, 0.9, 0], "size": [1.8, 0.1, 0.8], "color": "desk"}, {"type": "box", "parent": "desk", "pos": [-0.8, 0, -0.3], "size": [0.08, 0.9, 0.08], "color": "desk"}, {"type": "box", "parent": "desk", "pos": [0.8, 0, -0.3], "size": [0.08, 0.9, 0.08], "color": "desk"}, {"type": "box", "parent": "desk", "pos": [-0.8, 0, 0.3], "size": [0.08, 0.9, 0.08], "color": "desk"}, {"type": "box", "parent": "desk", "pos": [0.8, 0, 0.3], "size": [0.08, 0.9, 0.08], "color": "desk"}, {"name": "monitor", "type": "box", "parent": "desk", "pos": [0, 1.0, -0.2], "size": [0.8, 0.5, 0.06], "color": "#222222", "emissive": "screen", "glow": 0.8}, {"name": "kotak", "type": "box", "pos": [1.2, 0, -1.0], "size": [0.5, 0.5, 0.5], "color": "accent", "anim": [{"kind": "appear", "delay": 0.9}]}, {"name": "plant", "type": "group", "pos": [-2, 0, 1.2], "anim": [{"kind": "appear", "delay": 1.1}, {"kind": "sway", "amp": 3, "speed": 2}]}, {"type": "cylinder", "parent": "plant", "r": 0.17, "rTop": 0.22, "h": 0.35, "color": "pot"}, {"type": "sphere", "parent": "plant", "pos": [0, 0.35, 0], "r": 0.34, "color": "leaf"}, {"name": "lamp", "type": "light", "pos": [2, 1.6, -2.2], "color": "bulb", "intensity": 6, "distance": 6, "r": 0.14, "anim": [{"kind": "appear", "delay": 1.4}]}]};
 

@@ -14,16 +14,11 @@
   "walls": []
  },
  "camera": {
-  "size": 2.8,
   "elev": 30,
   "az": 40,
   "sway": 20,
   "swaySpeed": 0.35,
-  "target": [
-   0,
-   1.9,
-   0
-  ]
+  "fit": "objects"
  },
  "objects": [
   {
@@ -175,5 +170,6 @@
     }
    ]
   }
- ]
+ ],
+ "edges": true
 }

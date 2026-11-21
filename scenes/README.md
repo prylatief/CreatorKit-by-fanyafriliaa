@@ -21,7 +21,9 @@ Durasi default diambil dari field `duration` (detik). Ukuran/fps lewat opsi `--w
 }
 ```
 - Satuan bebas, lantai di `y = 0`. `pos` = titik tengah-dasar objek `[x, y, z]` (x ke kanan, z ke arah kamera).
-- `camera.size`: makin kecil makin zoom-in. `elev`: sudut dari atas (35 isometrik klasik, 45-55 lebih top-down, cocok untuk 9:16). `sway`: ayunan kamera (derajat).
+- `camera.fit`: `"objects"` = kamera zoom dan menengahkan diri otomatis supaya semua objek (termasuk saat meledak) pas di frame, tanpa menghitung `size`/`target` manual. `"all"` = termasuk lantai dan dinding. `camera.pad` (default 1.2) = ruang kosong di sekeliling. Framing tetap sepanjang video, jadi objek terlihat lebih kecil sebelum meledak.
+- `edges`: `true` (atau warna hex) = garis tipis di tepi setiap objek, berguna kalau dua bagian berwarna mirip. Per objek bisa dimatikan dengan `"edge": false`.
+- `camera.size`: makin kecil makin zoom-in (diabaikan kalau `fit` aktif). `elev`: sudut dari atas (35 isometrik klasik, 45-55 lebih top-down, cocok untuk 9:16). `sway`: ayunan kamera (derajat).
 
 ## Objek
 | type | field |
@@ -44,6 +46,8 @@ Umum: `name`, `parent` (nama group/objek yang sudah ditulis lebih dulu, `pos` ja
 | `spin` | `speed` (derajat/detik) |
 | `sway` | `amp` (derajat), `speed` |
 | `pulse` | `amp`, `speed` |
+
+Tips `explode`: kamera isometrik memendekkan gerak horizontal, jadi ledakan ke samping butuh `dist` 2 sampai 3 agar terbaca (ke atas cukup 0.5 sampai 2). Beri warna berbeda untuk bagian yang bersebelahan, atau aktifkan `edges`.
 
 Semua animasi dihitung dari waktu `t`, jadi hasilnya persis sama setiap dirender. Belum ada: teks/label, objek dari model 3D, kurva gerak bebas.
 
