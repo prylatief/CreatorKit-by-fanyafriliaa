@@ -37,12 +37,12 @@ const B = {
       t.add(mesh(new THREE.ConeGeometry(.35 + rnd() * .15, .9, 5), mat(shade(P[1], .65), { flatShading: true }), 0, .8, 0));
       t.position.set(Math.cos(a) * r, .38, Math.sin(a) * r); t.userData.ph = rnd() * 6; g.add(t); trees.push(t);
     }
-    for (let i = 0; i < 4; i++) { const c = mesh(new THREE.IcosahedronGeometry(.5 + rnd() * .3, 0), mat('#ffffff', { flatShading: true }), rnd() * 8 - 4, 2.2 + rnd(), rnd() * 6 - 3); c.scale.set(1.6, .7, 1); s.add(c); clouds.push(c); }
+    for (let i = 0; i < 4; i++) { const c = mesh(new THREE.IcosahedronGeometry(.5 + rnd() * .3, 0), mat('#ffffff', { flatShading: true }), rnd() * 8 - 4, 2.2 + rnd(), rnd() * 6 - 3); c.scale.set(1.6, .7, 1); s.add(c); clouds.push(c); c.userData.y0 = c.position.y; }
     const c = cam(40);
     return { scene: s, camera: c, tick(t) {
       c.position.set(Math.sin(t * .35) * 9, 5, Math.cos(t * .35) * 9); c.lookAt(0, 0, 0);
       trees.forEach(tr => tr.rotation.z = Math.sin(t * 2 + tr.userData.ph) * .05);
-      clouds.forEach((cl, i) => cl.position.y += Math.sin(t * .8 + i) * .002);
+      clouds.forEach((cl, i) => cl.position.y = cl.userData.y0 + Math.sin(t * .8 + i) * .08);
     } };
   },
 
@@ -70,7 +70,7 @@ const B = {
 
   'Glassmorphism'(P) {
     const s = new THREE.Scene(); s.background = gradTex(P[0], P[1]); lights(s, { amb: 1.1, dir: 1.2 });
-    const backs = [[P[3], 1, -1.3, .1, -2.5], ['#ffffff', .8, 1.5, .8, -2.5], [P[1], 1.2, .2, -1, -3]].map(([c, r, x, y, z]) => { const m = mesh(new THREE.SphereGeometry(r, 32, 24), basic(c), x, y, z); s.add(m); return m; });
+    const backs = [[P[3], 1, -1.3, .1, -2.5], ['#ffffff', .8, 1.5, .8, -2.5], [P[1], 1.2, .2, -1, -3]].map(([c, r, x, y, z]) => { const m = mesh(new THREE.SphereGeometry(r, 32, 24), basic(c), x, y, z); s.add(m); m.userData.x0 = x; return m; });
     const gm = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 1, thickness: 1.2, roughness: .08, ior: 1.45 });
     const tor = mesh(new THREE.TorusGeometry(1, .38, 32, 64), gm), sph = mesh(new THREE.SphereGeometry(.7, 48, 32), gm, 1.8, -.6, .5);
     s.add(tor, sph);
@@ -78,7 +78,7 @@ const B = {
     return { scene: s, camera: c, tick(t) {
       tor.rotation.x = t * .5; tor.rotation.y = t * .35; tor.position.y = Math.sin(t) * .2;
       sph.position.y = -.6 + Math.sin(t * 1.3) * .25;
-      backs.forEach((b, i) => b.position.x += Math.sin(t * .6 + i * 2) * .01);
+      backs.forEach((b, i) => b.position.x = b.userData.x0 + Math.sin(t * .6 + i * 2) * .45);
     } };
   },
 
@@ -95,7 +95,7 @@ const B = {
     const plant = new THREE.Group(); plant.add(mesh(new THREE.CylinderGeometry(.22, .17, .35, 8), mat('#c97b63')), mesh(new THREE.SphereGeometry(.34, 10, 8), mat('#6a9a5b'), 0, .5, 0)); plant.position.set(-2, .2, 1.2); g.add(plant);
     const lamp = mesh(new THREE.SphereGeometry(.14, 12, 10), basic('#fff2b0'), 2, 1.6, -2.2); g.add(lamp);
     const pl = new THREE.PointLight(0xffe2a0, 6, 6); pl.position.copy(lamp.position); g.add(pl);
-    return { scene: s, camera: c, resize(a) { c.left = -sz * a; c.right = sz * a; c.updateProjectionMatrix(); },
+    return { scene: s, camera: c, resize(a) { const hh = a < 1 ? 4.4 / a : sz, hw = a < 1 ? 4.4 : sz * a; c.left = -hw; c.right = hw; c.top = hh; c.bottom = -hh; c.updateProjectionMatrix(); },
       tick(t) { g.rotation.y = Math.sin(t * .4) * .25; plant.scale.y = 1 + Math.sin(t * 2) * .04; } };
   },
 
@@ -247,7 +247,13 @@ function build(name, palette) { const f = B[name]; if (!f) throw new Error('Gaya
 function draw(canvas, inst, t) {
   const r = getRenderer(), w = canvas.width, h = canvas.height;
   if (cur[0] !== w || cur[1] !== h) { r.setSize(w, h, false); cur = [w, h]; }
-  const cm = inst.camera; if (cm.isPerspectiveCamera) { cm.aspect = w / h; cm.updateProjectionMatrix(); } else inst.resize?.(w / h);
+  const cm = inst.camera, a = w / h;
+  if (cm.isPerspectiveCamera) {
+    // layar vertikal: lebarkan sudut pandang agar objek tidak terpotong di kiri/kanan
+    cm.userData.fov0 ??= cm.fov;
+    cm.fov = a < 1.2 ? 2 * Math.atan(Math.tan(cm.userData.fov0 * Math.PI / 360) * Math.pow(1.6 / a, .8)) * 180 / Math.PI : cm.userData.fov0;
+    cm.aspect = a; cm.updateProjectionMatrix();
+  } else inst.resize?.(a);
   inst.tick(t); r.render(inst.scene, cm);
   canvas.getContext('2d').drawImage(r.domElement, 0, 0, w, h);
 }
@@ -275,4 +281,20 @@ export function stage(canvas, name, palette) {
   const it = build(name, palette); let id = 0; const s0 = performance.now();
   const go = now => { id = requestAnimationFrame(go); draw(canvas, it, (now - s0) / 1000); };
   id = requestAnimationFrame(go); return () => cancelAnimationFrame(id);
+}
+
+/* ---------------- capture frame demi frame (untuk render video di VM / komputer) ---------------- */
+export const STYLE_NAMES = Object.keys(B);
+export const PALETTES = {
+  'Low-poly pastel': ['#FFD6A5', '#CAFFBF', '#9BF6FF', '#FDFFB6'], 'Neon cyberpunk': ['#0B0F1A', '#FF2E97', '#00E5FF', '#7C4DFF'],
+  'Glassmorphism': ['#E8EEFF', '#B8C7FF', '#FFFFFF', '#FF9ECF'], 'Isometric mini-room': ['#FFE8D6', '#B7B7A4', '#6B705C', '#FFB4A2'],
+  'Wireframe blueprint': ['#0D3B66', '#FAF0CA', '#F4D35E', '#EE964B'], 'Particle galaxy': ['#05010F', '#5B2A86', '#7AE7C7', '#F8F9FA'],
+  'Clay / toy 3D': ['#FFB5A7', '#FCD5CE', '#F8EDEB', '#A2D2FF'], 'Voxel / pixel 3D': ['#2B2D42', '#8D99AE', '#EF233C', '#FFD166'],
+  'Holographic iridescent': ['#0A0A1F', '#C77DFF', '#48CAE4', '#FFD6FF'], 'Product turntable studio': ['#F5F5F5', '#E0E0E0', '#222222', '#FF6B35'],
+  'Synthwave sunset': ['#2D00F7', '#F20089', '#FF8C42', '#FFD60A'], 'Paper-cut layers': ['#FDF0D5', '#C6D8D3', '#D81E5B', '#3A3335'],
+  'Toon / cel shading': ['#FFFFFF', '#FF595E', '#1982C4', '#FFCA3A']
+};
+export function createCapture(canvas, name, palette) {
+  const it = build(name, palette || PALETTES[name]);
+  return { renderAt(t) { draw(canvas, it, t); } };
 }

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CreatorKit capture</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style>
+</head>
+<body>
+<!-- Halaman tanpa UI untuk merender SATU frame pada waktu t tertentu (hasil selalu sama untuk t yang sama).
+     Parameter URL: style (nama gaya), t (detik), w, h (default 1080x1920), p (palet opsional, 4 hex dipisah koma, tanpa #)
+     API: window.captureReady (Promise), window.renderAt(t), window.frameDataURL() -->
+<canvas id="c"></canvas>
+<script type="module">
+import { createCapture, STYLE_NAMES, PALETTES } from './preview3d.js';
+const q = new URLSearchParams(location.search);
+const name = q.get('style') || 'Isometric mini-room';
+const w = +q.get('w') || 1080, h = +q.get('h') || 1920, t0 = +q.get('t') || 0;
+const c = document.getElementById('c'); c.width = w; c.height = h; c.style.width = w + 'px'; c.style.height = h + 'px';
+window.STYLE_NAMES = STYLE_NAMES;
+window.captureReady = new Promise((ok, no) => {
+  try {
+    if (!STYLE_NAMES.includes(name)) throw new Error('Gaya tidak dikenal: ' + name + '. Pilihan: ' + STYLE_NAMES.join(' | '));
+    const pal = q.get('p') ? q.get('p').split(',').map(x => '#' + x.replace('#', '')) : PALETTES[name];
+    const cap = createCapture(c, name, pal);
+    window.renderAt = t => { cap.renderAt(t); return true; };
+    window.frameDataURL = () => c.toDataURL('image/png');
+    window.renderAt(t0); document.documentElement.dataset.ready = '1'; ok(true);
+  } catch (e) { document.documentElement.dataset.error = e.message; no(e); }
+});
+window.captureReady.catch(() => {});
+</script>
+</body>
+</html>

@@ -742,7 +742,12 @@ function viewGaya() {
     <div class="small"><b>Cocok untuk:</b> ${esc(st.cocok)}</div>
     <div class="row"><button class="btn sm yellow" data-act="gayause" data-i="${i}">Pakai di Studio</button>
     <button class="btn sm mint" data-act="gayaaff" data-i="${i}">Pakai di Affiliate</button>
-    <button class="btn sm" data-act="gayacopy" data-i="${i}">Salin resep</button></div></div>`).join('')}</div>`;
+    <button class="btn sm" data-act="gayacopy" data-i="${i}">Salin resep</button></div></div>`).join('')}</div>
+  <div class="card" style="margin-top:20px"><h2>🎞️ Render jadi video (komputer / VM)</h2>
+    <p class="small muted">Untuk video 9:16 beneran, bukan rekam layar. Hasilnya selalu sama untuk gaya dan detik yang sama. Butuh Node 18+, Playwright (<code>npm i playwright</code>, <code>npx playwright install chromium</code>), dan ffmpeg. Jalankan dari folder proyek ini.</p>
+    <pre class="small" style="white-space:pre-wrap;background:#fff;border:2px solid var(--ink);border-radius:10px;padding:10px;margin:0 0 10px">node tools/render-video.js --style "Isometric mini-room" --seconds 12 --fps 30 --out isometric.mp4</pre>
+    <div class="row"><button class="btn sm yellow" data-act="rendercopy">Salin perintah</button><a class="btn sm" href="capture.html?style=Isometric%20mini-room&t=2&w=540&h=960" target="_blank" rel="noopener">Coba halaman capture ↗</a></div>
+    <p class="small muted" style="margin:10px 0 0">Tanpa ffmpeg: tambahkan <code>--png-dir frames/</code> untuk menyimpan PNG per frame. Lihat semua nama gaya: <code>--list</code>.</p></div>`;
 }
 
 function viewSettings() {
@@ -1085,6 +1090,7 @@ document.addEventListener('click', async e => {
     case 'stageclose': return closeStage();
     case 'gayause': T('studio').inputs.gaya = STYLES[+b.dataset.i].name; save(); toast('Gaya dipilih di Studio Konten'); location.hash = '#/studio'; return;
     case 'gayaaff': T('affiliate').inputs.gaya = STYLES[+b.dataset.i].name; save(); toast('Gaya dipilih di Konten Affiliate'); location.hash = '#/affiliate'; return;
+    case 'rendercopy': return copy('node tools/render-video.js --style "Isometric mini-room" --seconds 12 --fps 30 --out isometric.mp4');
     case 'gayacopy': { const st = STYLES[+b.dataset.i]; return copy(`Gaya: ${st.name} (${st.mood})\nPalet: ${st.palette.join(', ')}\nResep Three.js: ${st.three}`); }
     case 'acctnew': acctForm = 'new'; render(true); return $('#aform')?.scrollIntoView({ behavior: 'smooth' });
     case 'acctcancel': acctForm = null; return render(true);
