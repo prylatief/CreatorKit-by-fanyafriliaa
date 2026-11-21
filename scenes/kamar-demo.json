@@ -1,0 +1,253 @@
+{
+ "duration": 10,
+ "palette": {
+  "desk": "#6B705C",
+  "pot": "#c97b63",
+  "leaf": "#6a9a5b",
+  "pillow": "#ffffff",
+  "screen": "#4f8cff",
+  "bulb": "#fff2b0"
+ },
+ "room": {
+  "w": 5,
+  "d": 5,
+  "h": 3
+ },
+ "camera": {
+  "size": 3.9,
+  "elev": 38,
+  "sway": 14,
+  "swaySpeed": 0.4,
+  "target": [
+   0,
+   0.9,
+   0
+  ]
+ },
+ "objects": [
+  {
+   "name": "bed",
+   "type": "box",
+   "pos": [
+    -1.3,
+    0,
+    -0.8
+   ],
+   "size": [
+    1.6,
+    0.4,
+    2.2
+   ],
+   "color": "accent",
+   "anim": [
+    {
+     "kind": "appear",
+     "delay": 0.2
+    }
+   ]
+  },
+  {
+   "name": "pillow",
+   "type": "box",
+   "parent": "bed",
+   "pos": [
+    0,
+    0.4,
+    -0.8
+   ],
+   "size": [
+    1.5,
+    0.15,
+    0.9
+   ],
+   "color": "pillow"
+  },
+  {
+   "name": "desk",
+   "type": "group",
+   "pos": [
+    1.1,
+    0,
+    -1.9
+   ],
+   "anim": [
+    {
+     "kind": "appear",
+     "delay": 0.5
+    }
+   ]
+  },
+  {
+   "type": "box",
+   "parent": "desk",
+   "pos": [
+    0,
+    0.9,
+    0
+   ],
+   "size": [
+    1.8,
+    0.1,
+    0.8
+   ],
+   "color": "desk"
+  },
+  {
+   "type": "box",
+   "parent": "desk",
+   "pos": [
+    -0.8,
+    0,
+    -0.3
+   ],
+   "size": [
+    0.08,
+    0.9,
+    0.08
+   ],
+   "color": "desk"
+  },
+  {
+   "type": "box",
+   "parent": "desk",
+   "pos": [
+    0.8,
+    0,
+    -0.3
+   ],
+   "size": [
+    0.08,
+    0.9,
+    0.08
+   ],
+   "color": "desk"
+  },
+  {
+   "type": "box",
+   "parent": "desk",
+   "pos": [
+    -0.8,
+    0,
+    0.3
+   ],
+   "size": [
+    0.08,
+    0.9,
+    0.08
+   ],
+   "color": "desk"
+  },
+  {
+   "type": "box",
+   "parent": "desk",
+   "pos": [
+    0.8,
+    0,
+    0.3
+   ],
+   "size": [
+    0.08,
+    0.9,
+    0.08
+   ],
+   "color": "desk"
+  },
+  {
+   "name": "monitor",
+   "type": "box",
+   "parent": "desk",
+   "pos": [
+    0,
+    1.0,
+    -0.2
+   ],
+   "size": [
+    0.8,
+    0.5,
+    0.06
+   ],
+   "color": "#222222",
+   "emissive": "screen",
+   "glow": 0.8
+  },
+  {
+   "name": "kotak",
+   "type": "box",
+   "pos": [
+    1.2,
+    0,
+    -1.0
+   ],
+   "size": [
+    0.5,
+    0.5,
+    0.5
+   ],
+   "color": "accent",
+   "anim": [
+    {
+     "kind": "appear",
+     "delay": 0.9
+    }
+   ]
+  },
+  {
+   "name": "plant",
+   "type": "group",
+   "pos": [
+    -2,
+    0,
+    1.2
+   ],
+   "anim": [
+    {
+     "kind": "appear",
+     "delay": 1.1
+    },
+    {
+     "kind": "sway",
+     "amp": 3,
+     "speed": 2
+    }
+   ]
+  },
+  {
+   "type": "cylinder",
+   "parent": "plant",
+   "r": 0.17,
+   "rTop": 0.22,
+   "h": 0.35,
+   "color": "pot"
+  },
+  {
+   "type": "sphere",
+   "parent": "plant",
+   "pos": [
+    0,
+    0.35,
+    0
+   ],
+   "r": 0.34,
+   "color": "leaf"
+  },
+  {
+   "name": "lamp",
+   "type": "light",
+   "pos": [
+    2,
+    1.6,
+    -2.2
+   ],
+   "color": "bulb",
+   "intensity": 6,
+   "distance": 6,
+   "r": 0.14,
+   "anim": [
+    {
+     "kind": "appear",
+     "delay": 1.4
+    }
+   ]
+  }
+ ]
+}

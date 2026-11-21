@@ -22,6 +22,101 @@ function gradTex(c1, c2) {
 }
 const scene = (bg, fog) => { const s = new THREE.Scene(); s.background = C(bg); if (fog) s.fog = new THREE.Fog(C(bg), fog[0], fog[1]); return s; };
 
+
+/* ---------------- scene isometrik dari spec JSON (lihat scenes/README.md) ---------------- */
+const PRIMS = ['group', 'box', 'cylinder', 'sphere', 'cone', 'light'];
+const KINDS = ['bob', 'spin', 'sway', 'pulse', 'appear', 'explode'];
+const D2R = Math.PI / 180;
+const eio = x => { x = clamp(x, 0, 1); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const eob = x => { x = clamp(x, 0, 1); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+
+export function buildSpecScene(spec) {
+  const fail = (p, m) => { throw new Error(`Spec tidak valid di ${p}: ${m}`); };
+  if (!spec || typeof spec !== 'object' || Array.isArray(spec)) fail('(root)', 'harus berupa objek JSON');
+  const pal = { bg: '#FFE8D6', floor: '#B7B7A4', wallBack: '#FFE8D6', wallLeft: '#EADBC8', accent: '#FFB4A2', ...(spec.palette || {}) };
+  const col = (v, p) => { const h = typeof v === 'string' && v[0] !== '#' ? pal[v] : v; if (typeof h !== 'string' || !/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(h)) fail(p, `warna "${v}" harus hex (#RRGGBB) atau nama palet (${Object.keys(pal).join(', ')})`); return h; };
+  const vec = (v, d, p) => { const a = v ?? d; if (!Array.isArray(a) || a.length !== 3 || a.some(x => typeof x !== 'number' || !isFinite(x))) fail(p, 'harus array 3 angka [x, y, z]'); return a; };
+  const nv = (v, d, p) => { const x = v ?? d; if (typeof x !== 'number' || !isFinite(x)) fail(p, 'harus angka'); return x; };
+
+  const room = { w: 5, d: 5, h: 3, walls: ['back', 'left'], floor: true, ...(spec.room || {}) };
+  ['w', 'd', 'h'].forEach(k => { if (nv(room[k], 5, 'room.' + k) <= 0) fail('room.' + k, 'harus > 0'); });
+  if (!Array.isArray(room.walls) || room.walls.some(w => w !== 'back' && w !== 'left')) fail('room.walls', 'isi dengan "back" dan/atau "left" ([] = tanpa dinding)');
+  const cs = { size: 4, az: 45, elev: 35.264, dist: 40, sway: 12, swaySpeed: .4, target: [0, .8, 0], ...(spec.camera || {}) };
+  ['size', 'az', 'elev', 'dist', 'sway', 'swaySpeed'].forEach(k => nv(cs[k], 0, 'camera.' + k));
+  vec(cs.target, null, 'camera.target');
+
+  const s = scene(col('bg', 'palette.bg')), shadows = spec.shadows !== false;
+  s.add(new THREE.HemisphereLight(0xffffff, 0x9a9aa8, .95));
+  const sun = new THREE.DirectionalLight(0xffffff, .9); sun.position.set(6, 9, 5);
+  if (shadows) { sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9 }); sun.shadow.bias = -.0005; }
+  s.add(sun);
+  const solid = (g, color, o = {}) => { const m = new THREE.Mesh(g, mat(color, o)); m.castShadow = shadows; m.receiveShadow = shadows; return m; };
+  if (room.floor) { const f = solid(new THREE.BoxGeometry(room.w, .2, room.d), col('floor', 'palette.floor')); f.position.y = -.1; s.add(f); }
+  if (room.walls.includes('back')) { const w = solid(new THREE.BoxGeometry(room.w + .2, room.h, .2), col('wallBack', 'palette.wallBack')); w.position.set(-.1, room.h / 2, -room.d / 2 - .1); s.add(w); }
+  if (room.walls.includes('left')) { const w = solid(new THREE.BoxGeometry(.2, room.h, room.d), col('wallLeft', 'palette.wallLeft')); w.position.set(-room.w / 2 - .1, room.h / 2, 0); s.add(w); }
+
+  const byName = new Map(), items = [];
+  if (spec.objects != null && !Array.isArray(spec.objects)) fail('objects', 'harus array');
+  (spec.objects || []).forEach((o, i) => {
+    const P = `objects[${i}]`;
+    if (!o || typeof o !== 'object') fail(P, 'harus objek');
+    if (!PRIMS.includes(o.type)) fail(P + '.type', `"${o.type}" tidak dikenal. Pilihan: ${PRIMS.join(', ')}`);
+    const g = new THREE.Group(), pos = vec(o.pos, [0, 0, 0], P + '.pos');
+    let parent = s;
+    if (o.parent != null) { parent = byName.get(o.parent); if (!parent) fail(P + '.parent', `"${o.parent}" belum didefinisikan (parent harus ditulis lebih dulu)`); }
+    g.position.set(...pos); g.rotation.y = nv(o.rot, 0, P + '.rot') * D2R; parent.add(g);
+    if (o.name != null) { if (byName.has(o.name)) fail(P + '.name', `nama "${o.name}" dipakai dua kali`); byName.set(o.name, g); }
+    const c = o.type === 'light' ? col(o.color ?? '#ffffff', P + '.color') : o.type === 'group' ? null : col(o.color ?? 'accent', P + '.color');
+    const opt = { roughness: nv(o.rough, .75, P + '.rough'), metalness: nv(o.metal, 0, P + '.metal'), flatShading: !!o.flat };
+    if (o.emissive != null) { opt.emissive = C(col(o.emissive, P + '.emissive')); opt.emissiveIntensity = nv(o.glow, .8, P + '.glow'); }
+    let ref = null;
+    if (o.type === 'box') { const z = vec(o.size, [1, 1, 1], P + '.size'); const m = solid(new THREE.BoxGeometry(...z), c, opt); m.position.y = z[1] / 2; g.add(m); }
+    else if (o.type === 'cylinder') { const r = nv(o.r, .5, P + '.r'), h = nv(o.h, 1, P + '.h'); const m = solid(new THREE.CylinderGeometry(nv(o.rTop, r, P + '.rTop'), r, h, 28), c, opt); m.position.y = h / 2; g.add(m); }
+    else if (o.type === 'cone') { const r = nv(o.r, .5, P + '.r'), h = nv(o.h, 1, P + '.h'); const m = solid(new THREE.ConeGeometry(r, h, 28), c, opt); m.position.y = h / 2; g.add(m); }
+    else if (o.type === 'sphere') { const r = nv(o.r, .5, P + '.r'); const m = solid(new THREE.SphereGeometry(r, 28, 18), c, opt); m.position.y = o.center ? 0 : r; g.add(m); }
+    else if (o.type === 'light') {
+      const r = nv(o.r, .14, P + '.r'); if (r > 0) g.add(mesh(new THREE.SphereGeometry(r, 16, 12), basic(c)));
+      const pl = new THREE.PointLight(C(c), nv(o.intensity, 6, P + '.intensity'), nv(o.distance, 6, P + '.distance')); g.add(pl); ref = pl; pl.userData.i0 = pl.intensity;
+    }
+    const anims = (o.anim ?? []); if (!Array.isArray(anims)) fail(P + '.anim', 'harus array');
+    anims.forEach((a, j) => { if (!a || !KINDS.includes(a.kind)) fail(`${P}.anim[${j}].kind`, `"${a && a.kind}" tidak dikenal. Pilihan: ${KINDS.join(', ')}`); if (a.kind === 'explode') { vec(a.dir, [0, 1, 0], `${P}.anim[${j}].dir`); nv(a.t0, 0, `${P}.anim[${j}].t0`); nv(a.t1, 1, `${P}.anim[${j}].t1`); } });
+    items.push({ g, base: pos.slice(), rot0: g.rotation.y, anims, light: ref });
+  });
+
+  const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, .1, 300);
+  const place = t => {
+    const az = (cs.az + Math.sin(t * cs.swaySpeed) * cs.sway) * D2R, el = cs.elev * D2R, [tx, ty, tz] = cs.target;
+    cam.position.set(tx + Math.cos(el) * Math.sin(az) * cs.dist, ty + Math.sin(el) * cs.dist, tz + Math.cos(el) * Math.cos(az) * cs.dist); cam.lookAt(tx, ty, tz);
+  };
+  const dirv = new THREE.Vector3();
+  return {
+    scene: s, camera: cam, duration: spec.duration, names: [...byName.keys()],
+    resize(a) { const hw = a < 1 ? cs.size : cs.size * .75 * a, hh = a < 1 ? cs.size / a : cs.size * .75; cam.left = -hw; cam.right = hw; cam.top = hh; cam.bottom = -hh; cam.updateProjectionMatrix(); },
+    tick(t) {
+      place(t);
+      items.forEach(({ g, base, rot0, anims, light }) => {
+        let x = base[0], y = base[1], z = base[2], ry = rot0, rz = 0, sc = 1;
+        for (const a of anims) {
+          const sp = a.speed ?? 1, ph = a.phase ?? 0;
+          if (a.kind === 'bob') y += Math.sin(t * sp + ph) * (a.amp ?? .1);
+          else if (a.kind === 'spin') ry += t * (a.speed ?? 45) * D2R;
+          else if (a.kind === 'sway') rz += Math.sin(t * sp + ph) * (a.amp ?? 5) * D2R;
+          else if (a.kind === 'pulse') sc *= 1 + Math.sin(t * sp + ph) * (a.amp ?? .05);
+          else if (a.kind === 'appear') { const u = (t - (a.delay ?? 0)) / (a.dur ?? .6), k = eob(u); sc *= u <= 0 ? 1e-4 : Math.max(k, 1e-4); y += (1 - clamp(u, 0, 1)) * (a.drop ?? 0); }
+          else if (a.kind === 'explode') {
+            let k = eio((t - a.t0) / ((a.t1 ?? a.t0 + 1) - a.t0));
+            if (a.t2 != null) k *= 1 - eio((t - a.t2) / ((a.t3 ?? a.t2 + 1) - a.t2));
+            dirv.set(...(a.dir ?? [0, 1, 0])).normalize().multiplyScalar((a.dist ?? 1) * k); x += dirv.x; y += dirv.y; z += dirv.z;
+          }
+        }
+        g.position.set(x, y, z); g.rotation.y = ry; g.rotation.z = rz; g.scale.setScalar(sc);
+        if (light) light.intensity = light.userData.i0 * clamp(sc, 0, 1);
+      });
+    }
+  };
+}
+const ROOM_SPEC = {"duration": 10, "palette": {"desk": "#6B705C", "pot": "#c97b63", "leaf": "#6a9a5b", "pillow": "#ffffff", "screen": "#4f8cff", "bulb": "#fff2b0"}, "room": {"w": 5, "d": 5, "h": 3}, "camera": {"size": 3.9, "elev": 38, "sway": 14, "swaySpeed": 0.4, "target": [0, 0.9, 0]}, "objects": [{"name": "bed", "type": "box", "pos": [-1.3, 0, -0.8], "size": [1.6, 0.4, 2.2], "color": "accent", "anim": [{"kind": "appear", "delay": 0.2}]}, {"name": "pillow", "type": "box", "parent": "bed", "pos": [0, 0.4, -0.8], "size": [1.5, 0.15, 0.9], "color": "pillow"}, {"name": "desk", "type": "group", "pos": [1.1, 0, -1.9], "anim": [{"kind": "appear", "delay": 0.5}]}, {"type": "box", "parent": "desk", "pos": [0, 0.9, 0], "size": [1.8, 0.1, 0.8], "color": "desk"}, {"type": "box", "parent": "desk", "pos": [-0.8, 0, -0.3], "size": [0.08, 0.9, 0.08], "color": "desk"}, {"type": "box", "parent": "desk", "pos": [0.8, 0, -0.3], "size": [0.08, 0.9, 0.08], "color": "desk"}, {"type": "box", "parent": "desk", "pos": [-0.8, 0, 0.3], "size": [0.08, 0.9, 0.08], "color": "desk"}, {"type": "box", "parent": "desk", "pos": [0.8, 0, 0.3], "size": [0.08, 0.9, 0.08], "color": "desk"}, {"name": "monitor", "type": "box", "parent": "desk", "pos": [0, 1.0, -0.2], "size": [0.8, 0.5, 0.06], "color": "#222222", "emissive": "screen", "glow": 0.8}, {"name": "kotak", "type": "box", "pos": [1.2, 0, -1.0], "size": [0.5, 0.5, 0.5], "color": "accent", "anim": [{"kind": "appear", "delay": 0.9}]}, {"name": "plant", "type": "group", "pos": [-2, 0, 1.2], "anim": [{"kind": "appear", "delay": 1.1}, {"kind": "sway", "amp": 3, "speed": 2}]}, {"type": "cylinder", "parent": "plant", "r": 0.17, "rTop": 0.22, "h": 0.35, "color": "pot"}, {"type": "sphere", "parent": "plant", "pos": [0, 0.35, 0], "r": 0.34, "color": "leaf"}, {"name": "lamp", "type": "light", "pos": [2, 1.6, -2.2], "color": "bulb", "intensity": 6, "distance": 6, "r": 0.14, "anim": [{"kind": "appear", "delay": 1.4}]}]};
+
 /* ---------------- 13 gaya ---------------- */
 const B = {
   'Low-poly pastel'(P) {
@@ -83,20 +178,7 @@ const B = {
   },
 
   'Isometric mini-room'(P) {
-    const s = scene(P[0]); lights(s, { amb: .9, dir: .9, pos: [6, 9, 5] });
-    const sz = 3.6, c = new THREE.OrthographicCamera(-sz * 1.6, sz * 1.6, sz, -sz, .1, 100); c.position.set(8, 7, 8); c.lookAt(0, .7, 0);
-    const g = new THREE.Group(); s.add(g);
-    const box = (w, h, d, col, x, y, z, o) => { const m = mesh(new THREE.BoxGeometry(w, h, d), mat(col, o), x, y, z); g.add(m); return m; };
-    box(5, .2, 5, P[1], 0, 0, 0); box(5, 3, .2, shade(P[0], 1), 0, 1.6, -2.4); box(.2, 3, 5, shade(P[0], .9), -2.4, 1.6, 0);
-    box(1.6, .4, 2.2, P[3], -1.3, .3, -.8); box(1.5, .15, .9, '#ffffff', -1.3, .6, -1.6);
-    box(1.8, .1, .8, P[2], 1.1, 1, -1.9); [[.2, -2.2], [2, -2.2], [.2, -1.6], [2, -1.6]].forEach(([x, z]) => box(.08, 1, .08, shade(P[2], .8), x, .55, z));
-    box(.8, .5, .06, '#222222', 1.1, 1.35, -2.1, { emissive: C('#4f8cff'), emissiveIntensity: .8 });
-    box(.5, .5, .5, P[3], 1.2, .35, -1.0);
-    const plant = new THREE.Group(); plant.add(mesh(new THREE.CylinderGeometry(.22, .17, .35, 8), mat('#c97b63')), mesh(new THREE.SphereGeometry(.34, 10, 8), mat('#6a9a5b'), 0, .5, 0)); plant.position.set(-2, .2, 1.2); g.add(plant);
-    const lamp = mesh(new THREE.SphereGeometry(.14, 12, 10), basic('#fff2b0'), 2, 1.6, -2.2); g.add(lamp);
-    const pl = new THREE.PointLight(0xffe2a0, 6, 6); pl.position.copy(lamp.position); g.add(pl);
-    return { scene: s, camera: c, resize(a) { const hh = a < 1 ? 4.4 / a : sz, hw = a < 1 ? 4.4 : sz * a; c.left = -hw; c.right = hw; c.top = hh; c.bottom = -hh; c.updateProjectionMatrix(); },
-      tick(t) { g.rotation.y = Math.sin(t * .4) * .25; plant.scale.y = 1 + Math.sin(t * 2) * .04; } };
+    return buildSpecScene({ ...ROOM_SPEC, palette: { ...ROOM_SPEC.palette, bg: P[0], floor: P[1], wallBack: P[0], wallLeft: shade(P[0], .93), accent: P[3], desk: P[2] } });
   },
 
   'Wireframe blueprint'(P) {
@@ -294,6 +376,10 @@ export const PALETTES = {
   'Synthwave sunset': ['#2D00F7', '#F20089', '#FF8C42', '#FFD60A'], 'Paper-cut layers': ['#FDF0D5', '#C6D8D3', '#D81E5B', '#3A3335'],
   'Toon / cel shading': ['#FFFFFF', '#FF595E', '#1982C4', '#FFCA3A']
 };
+export function createCaptureFromSpec(canvas, spec) {
+  const it = buildSpecScene(spec);
+  return { duration: it.duration, renderAt(t) { draw(canvas, it, t); } };
+}
 export function createCapture(canvas, name, palette) {
   const it = build(name, palette || PALETTES[name]);
   return { renderAt(t) { draw(canvas, it, t); } };

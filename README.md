@@ -18,6 +18,8 @@ node tools/render-video.js --style "Isometric mini-room" --seconds 12 --fps 30 -
 node tools/render-video.js --list                      # daftar gaya
 node tools/render-video.js --style "Voxel / pixel 3D" --seconds 8 --png-dir frames/   # tanpa ffmpeg
 ```
+Scene per topik bisa dirakit dari file JSON tanpa menulis Three.js: `node tools/render-video.js --spec scenes/bongkar-benda.json --out bongkar.mp4`. Skema dan contoh ada di [scenes/README.md](scenes/README.md).
+
 Opsi: `--w` `--h` (default 1080x1920), `--fps`, `--seconds`, `--start`, `--crf`. WebGL memakai SwiftShader (software), jadi tidak butuh GPU. Perlu ffmpeg kecuali memakai `--png-dir`.
 
 ## Mode
